@@ -79,20 +79,20 @@ func main() {
 		logrus.Errorf("file path is required")
 	}
 
-	system, err := engine.InitSystem()
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	defer system.Close()
+	//system, err := engine.InitSystem()
+	//if err != nil {
+	//	logrus.Error(err)
+	//}
+	//defer system.Close()
 
 	e, err := engine.CreateEngineByFile(*filePath)
 	if err != nil {
-		fmt.Println(err)
+		logrus.Error(err)
+		return
 	}
 
 	if e == nil {
-		fmt.Println("engine is nil")
+		logrus.Error("engine is nil")
 		return
 	}
 

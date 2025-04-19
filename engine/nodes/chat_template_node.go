@@ -1,21 +1,21 @@
-package engine
+package nodes
 
 import (
-	"eino-script/parser"
+	"eino-script/types"
 	"fmt"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/schema"
 	"github.com/sirupsen/logrus"
 )
 
-func (e *Engine) CreateChatTemplateNode(cfg *parser.NodeCfg) error {
+func CreateChatTemplateNode(cfg *types.NodeCfg) (prompt.ChatTemplate, error) {
 	logrus.Infof("CreateChatTemplateNode: %+v", *cfg)
 
 	var messagesTemplate = make([]schema.MessagesTemplate, 0)
 
 	systemMsg, ok := cfg.Attrs["system_message"].(string)
 	if !ok {
-		return fmt.Errorf("system_message not found in attrs")
+		return nil, fmt.Errorf("system_message not found in attrs")
 	}
 	messagesTemplate = append(messagesTemplate, schema.SystemMessage(systemMsg))
 
@@ -31,6 +31,5 @@ func (e *Engine) CreateChatTemplateNode(cfg *parser.NodeCfg) error {
 		messagesTemplate...,
 	)
 
-	_ = e.g.AddChatTemplateNode(cfg.Name, pt)
-	return nil
+	return pt, nil
 }

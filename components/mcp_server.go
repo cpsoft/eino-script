@@ -2,7 +2,6 @@ package components
 
 import (
 	"context"
-	"eino-script/parser"
 	"eino-script/types"
 	"encoding/json"
 	"errors"
@@ -126,7 +125,7 @@ func (m *McpServer) ListResources(ctx context.Context) (interface{}, error) {
 	return resources, nil
 }
 
-func CreateMcpSSEServer(cfg *parser.McpServerCfg) (types.IMcpServer, error) {
+func CreateMcpSSEServer(cfg *types.McpServerCfg) (types.IMcpServer, error) {
 	logrus.Debugf("CreateMcpSSEServer")
 	if cfg.Name == "" {
 		return nil, fmt.Errorf("Mcp server name is required")

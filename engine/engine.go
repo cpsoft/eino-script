@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"eino-script/components"
-	"eino-script/parser"
 	"eino-script/types"
 	"fmt"
 	"github.com/cloudwego/eino-ext/callbacks/apmplus"
@@ -84,7 +83,7 @@ type Engine struct {
 }
 
 func CreateEngineByFile(filename string) (*Engine, error) {
-	cfg, err := parser.ParserFile(filename)
+	cfg, err := ParserFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -92,14 +91,14 @@ func CreateEngineByFile(filename string) (*Engine, error) {
 }
 
 func CreateEngineByData(data []byte) (*Engine, error) {
-	cfg, err := parser.Parser(data)
+	cfg, err := Parser(data)
 	if err != nil {
 		return nil, err
 	}
 	return CreateEngine(cfg)
 }
 
-func CreateEngine(cfg *parser.Config) (*Engine, error) {
+func CreateEngine(cfg *types.Config) (*Engine, error) {
 	var err error
 	e := &Engine{}
 	e.ctx = context.Background()
@@ -120,25 +119,19 @@ func CreateEngine(cfg *parser.Config) (*Engine, error) {
 		}
 	}
 
-	for _, nodeCfg := range cfg.Nodes {
-		logrus.Infof("CreateEngine: %s", nodeCfg.Name)
-		switch nodeCfg.Type {
-		case "ChatTemplate":
-			err = e.CreateChatTemplateNode(&nodeCfg)
-		case "McpTemplate":
-			err = e.CreateMcpTemplateNode(&nodeCfg)
-		case "ChatModel":
-			err = e.CreateChatModelNode(&nodeCfg)
-		case "McpToolNode":
-			err = e.CreateMcpToolNode(&nodeCfg)
-		case "OllamaChatModel":
-			err = e.CreateOllamaChatModelNode(&nodeCfg)
-		case "QwenChatModel":
-			err = e.CreateQwenChatModelNode(&nodeCfg)
-		}
-		if err != nil {
-			return nil, err
-		}
+	err = e.CreateChatTemplates(&cfg.ChatTemplates)
+	if err != nil {
+		return nil, err
+	}
+
+	err = e.CreateTools(&cfg.Tools)
+	if err != nil {
+		return nil, err
+	}
+
+	err = e.CreateChatModels(&cfg.ChatModels)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, edgeCfg := range cfg.Edges {
@@ -147,6 +140,8 @@ func CreateEngine(cfg *parser.Config) (*Engine, error) {
 			return nil, err
 		}
 	}
+
+	e.g.AddBranch("a", branch)
 
 	e.r, err = e.g.Compile(e.ctx, compose.WithMaxRunSteps(10))
 	if err != nil {

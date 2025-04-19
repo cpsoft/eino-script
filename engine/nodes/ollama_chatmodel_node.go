@@ -1,9 +1,11 @@
-package engine
+package nodes
 
 import (
-	"eino-script/parser"
+	"context"
+	"eino-script/types"
 	"errors"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
+	"github.com/cloudwego/eino/components/model"
 	"github.com/ollama/ollama/api"
 	"github.com/sirupsen/logrus"
 )
@@ -13,19 +15,19 @@ type OllamaConfig struct {
 	Model   string
 }
 
-func (e *Engine) CreateOllamaChatModelNode(cfg *parser.NodeCfg) error {
+func CreateOllamaChatModelNode(cfg *types.NodeCfg) (model.ToolCallingChatModel, error) {
 	logrus.Infof("CreateOllamaChatModelNode: %+v", *cfg)
 	BaseUrl, ok := cfg.Attrs["base_url"].(string)
 	if !ok {
-		return errors.New("base url not found in config")
+		return nil, errors.New("base url not found in config")
 	}
 
 	Model, ok := cfg.Attrs["model"].(string)
 	if !ok {
-		return errors.New("model not found in config")
+		return nil, errors.New("model not found in config")
 	}
 
-	model, err := ollama.NewChatModel(e.ctx, &ollama.ChatModelConfig{
+	model, err := ollama.NewChatModel(context.Background(), &ollama.ChatModelConfig{
 		BaseURL: BaseUrl,
 		Model:   Model,
 
@@ -37,10 +39,8 @@ func (e *Engine) CreateOllamaChatModelNode(cfg *parser.NodeCfg) error {
 		},
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	e.models[cfg.Name] = model
-	_ = e.g.AddChatModelNode(cfg.Name, model)
-	return nil
+	return model, nil
 }

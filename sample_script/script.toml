@@ -1,4 +1,9 @@
-[[Node]]
+[[McpServer]]
+type = "SSEServer"
+name = "Amap"
+server_url="https://mcp.amap.com/sse?key=xxxxxxxxxxxx"
+
+[[ChatTemplate]]
 type = "ChatTemplate"
 name = "prompt"
 server = "Amap"
@@ -6,28 +11,23 @@ system_message = "你是一名导游。"
 history=true
 
 
-#[[Node]]
-#type = "OllamaChatModel"
-#name = "chatmodel-tool"
-#base_url = "http://localhost:11434"
-#model = "qwq"
-
-[[Node]]
-type = "McpToolNode"
+[[Tool]]
+type = "Mcp"
 name = "amap_tools"
 server = "Amap"
 
-[[Node]]
-type = "OllamaChatModel"
+[[ChatModel]]
+type = "Ollama"
 name = "ollama-llm"
 base_url = "http://localhost:11434"
+bindtool = "amap_tools"
 model = "qwq"
 
-[[Node]]
-type = "QwenChatModel"
+[[ChatModel]]
+type = "Qwen"
 name = "chatmodel-tool"
 base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-api_key = "你自己的key"
+api_key = "xxxxxx"
 model = "qwen2.5-vl-32b-instruct"
 
 [[Edge]]
@@ -46,15 +46,7 @@ dst = "amap_tools"
 src = "amap_tools"
 dst = "ollama-llm"
 
-#[[Edge]]
-#src = "chatmodel-tool"
-#dst = "end"
-
 [[Edge]]
 src = "ollama-llm"
 dst = "end"
 
-[[McpServer]]
-type = "SSEServer"
-name = "Amap"
-server_url="https://mcp.amap.com/sse?key=你自己的key"

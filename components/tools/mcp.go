@@ -11,8 +11,8 @@ import (
 )
 
 type McpToolsConfig struct {
-	Server       types.IMcpServer
-	ToolNameList []string
+	Server    types.IMcpServer
+	ToolsInfo []*schema.ToolInfo
 }
 
 type mcpToolHelper struct {
@@ -22,13 +22,8 @@ type mcpToolHelper struct {
 
 func GetMcpTools(ctx context.Context, cfg *McpToolsConfig) ([]tool.BaseTool, error) {
 	logrus.Debugf("GetMcpTools")
-	toolsInfo, err := cfg.Server.ListTools(ctx, []string{})
-	if err != nil {
-		return nil, err
-	}
-
-	tools := make([]tool.BaseTool, len(toolsInfo))
-	for i, toolInfo := range toolsInfo {
+	tools := make([]tool.BaseTool, len(cfg.ToolsInfo))
+	for i, toolInfo := range cfg.ToolsInfo {
 		tools[i] = &mcpToolHelper{
 			server: cfg.Server,
 			info:   toolInfo,
