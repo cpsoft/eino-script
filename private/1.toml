@@ -36,10 +36,10 @@ dst = "prompt"
 
 [[Edge]]
 src = "prompt"
-dst = "chatmodel-tool"
+dst = "ollama-llm"
 
 [[Edge]]
-src = "chatmodel-tool"
+src = "ollama-llm"
 dst = "amap_tools"
 
 [[Edge]]
