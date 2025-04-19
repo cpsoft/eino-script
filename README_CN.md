@@ -9,7 +9,17 @@ Eino-Script是一个基于eino开发的脚本驱动的AI工作流引擎。开发
  - ⛰️ **多脚本格式支持**：通过viper库，支持toml、yaml、json等脚本格式
  - ⚡️ **支持多来源脚本**：支持文件脚本，也支持内存脚本（用于网络传递）
 
-### 🥔 安装
+### 🥔 安装及使用
+
+由于eino的依赖关系问题，github.com/getkin/kin-openapi库 必须指定版本 v0.118.0
+```bash
+go get github.com/getkin/kin-openapi@v0.118.
+```
+
+使用：
+```bash
+eino-script -file [配置文件路径]
+```
 
 需要 Go 1.18 或更高版本
 

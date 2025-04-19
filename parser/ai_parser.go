@@ -3,7 +3,10 @@ package parser
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"io"
+	"os"
 )
 
 type NodeCfg struct {
@@ -41,6 +44,22 @@ func Parser(data []byte) (*Config, error) {
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
-	fmt.Println("数据：", cfg)
+	logrus.Debugf("flow script：%+v", cfg)
 	return &cfg, nil
+}
+
+func ParserFile(filename string) (*Config, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		logrus.Error("open file error:", err)
+		return nil, fmt.Errorf("open file error, %s", err)
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		logrus.Errorf("read file error, %s", err)
+		return nil, fmt.Errorf("read file error, %s", err)
+	}
+	return Parser(data)
 }

@@ -5,13 +5,13 @@ import (
 	components "eino-script/components/tools"
 	"eino-script/parser"
 	"errors"
-	"fmt"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
+	"github.com/sirupsen/logrus"
 )
 
 func (e *Engine) CreateMcpToolNode(cfg *parser.NodeCfg) error {
-	fmt.Println("CreateMcpToolNode: ", *cfg)
+	logrus.Infof("CreateMcpToolNode: %+v", *cfg)
 	serverName, ok := cfg.Attrs["server"].(string)
 	if serverName == "" {
 		return errors.New("CreateMcpTemplateNode: name is required")

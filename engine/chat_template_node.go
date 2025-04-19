@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/schema"
+	"github.com/sirupsen/logrus"
 )
 
 func (e *Engine) CreateChatTemplateNode(cfg *parser.NodeCfg) error {
-	fmt.Println("CreateChatTemplateNode: ", *cfg)
+	logrus.Infof("CreateChatTemplateNode: %+v", *cfg)
 
 	var messagesTemplate = make([]schema.MessagesTemplate, 0)
 

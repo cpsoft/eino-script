@@ -3,9 +3,9 @@ package engine
 import (
 	"eino-script/parser"
 	"errors"
-	"fmt"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/ollama/ollama/api"
+	"github.com/sirupsen/logrus"
 )
 
 type OllamaConfig struct {
@@ -14,7 +14,7 @@ type OllamaConfig struct {
 }
 
 func (e *Engine) CreateOllamaChatModelNode(cfg *parser.NodeCfg) error {
-	fmt.Println("CreateOllamaChatModelNode: ", *cfg)
+	logrus.Infof("CreateOllamaChatModelNode: %+v", *cfg)
 	BaseUrl, ok := cfg.Attrs["base_url"].(string)
 	if !ok {
 		return errors.New("base url not found in config")

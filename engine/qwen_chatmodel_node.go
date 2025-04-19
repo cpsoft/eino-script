@@ -4,12 +4,12 @@ import (
 	"context"
 	"eino-script/parser"
 	"errors"
-	"fmt"
 	"github.com/cloudwego/eino-ext/components/model/qwen"
+	"github.com/sirupsen/logrus"
 )
 
 func (e *Engine) CreateQwenChatModelNode(cfg *parser.NodeCfg) error {
-	fmt.Println("CreateOllamaChatModelNode: ", *cfg)
+	logrus.Infof("CreateOllamaChatModelNode: %+v", *cfg)
 	BaseUrl, ok := cfg.Attrs["base_url"].(string)
 	if !ok {
 		return errors.New("base url not found in config")

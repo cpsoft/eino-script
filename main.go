@@ -1,42 +1,13 @@
 package main
 
 import (
-	"context"
 	"eino-script/engine"
-	"eino-script/parser"
 	"flag"
 	"fmt"
-	"github.com/cloudwego/eino-ext/callbacks/apmplus"
-	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/schema"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
 	"regexp"
 )
-
-func readScript() ([]byte, error) {
-	filePath := flag.String("file", "", "file path")
-	flag.Parse()
-
-	if *filePath == "" {
-		flag.PrintDefaults()
-		return nil, fmt.Errorf("file path is required")
-	}
-
-	file, err := os.Open(*filePath)
-	if err != nil {
-		fmt.Println("open file error:", err)
-		return nil, fmt.Errorf("open file error, %s", err)
-	}
-	defer file.Close()
-
-	data, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("read file error, %s", err)
-	}
-	return data, nil
-}
 
 func shell(e *engine.Engine) {
 	var msg string
@@ -62,10 +33,9 @@ func shell(e *engine.Engine) {
 			in["chat_history"] = chat_history
 		}
 
-		//fmt.Printf("%v\n", in)
-
 		err = e.Invoke(in)
 		if err != nil {
+			logrus.Error(err)
 			return
 		}
 
@@ -101,30 +71,22 @@ func shell(e *engine.Engine) {
 
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
-	data, err := readScript()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	cfg, err := parser.Parser(data)
-	if err != nil {
-		fmt.Println(err)
-		return
+	filePath := flag.String("file", "", "file path")
+	flag.Parse()
+
+	if *filePath == "" {
+		flag.PrintDefaults()
+		logrus.Errorf("file path is required")
 	}
 
-	cbh, showdown, err := apmplus.NewApmplusHandler(&apmplus.Config{
-		Host:        "apmplus-cn-beijing.volces.com:4317",
-		AppKey:      "fad265ce90e3613e299af8ef6f4af03c",
-		ServiceName: "eino-app",
-		Release:     "release/v0.0.1",
-	})
+	system, err := engine.InitSystem()
 	if err != nil {
-		fmt.Println(err)
+		logrus.Error(err)
 	}
 
-	callbacks.AppendGlobalHandlers(cbh)
+	defer system.Close()
 
-	e, err := engine.CreateEngine(cfg)
+	e, err := engine.CreateEngineByFile(*filePath)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -138,6 +100,5 @@ func main() {
 
 	shell(e)
 
-	showdown(context.Background())
 	return
 }
