@@ -10,7 +10,7 @@ import (
 type NodesFactroyData struct {
 }
 
-var chattemplate_functions = map[string]func(cfg *types.NodeCfg) (prompt.ChatTemplate, error){
+var chattemplate_functions = map[types.NodeType]func(cfg *types.NodeCfg) (prompt.ChatTemplate, error){
 	"ChatTemplate": CreateChatTemplateNode,
 }
 
@@ -22,7 +22,7 @@ func CreateChatTemplateByFactroy(cfg *types.NodeCfg) (prompt.ChatTemplate, error
 	return f(cfg)
 }
 
-var chatmodel_functions = map[string]func(cfg *types.NodeCfg) (model.ToolCallingChatModel, error){
+var chatmodel_functions = map[types.NodeType]func(cfg *types.NodeCfg) (model.ToolCallingChatModel, error){
 	"Ollama": CreateOllamaChatModelNode,
 	"Qwen":   CreateQwenChatModelNode,
 }

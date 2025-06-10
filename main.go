@@ -2,6 +2,7 @@ package main
 
 import (
 	"eino-script/engine"
+	"eino-script/server"
 	"flag"
 	"fmt"
 	"github.com/cloudwego/eino/schema"
@@ -33,11 +34,13 @@ func shell(e *engine.Engine) {
 			in["chat_history"] = chat_history
 		}
 
-		err = e.Invoke(in)
+		msg, err := e.Invoke(in)
 		if err != nil {
 			logrus.Error(err)
 			return
 		}
+
+		fmt.Print(msg.Content)
 
 		//err = e.Stream(in)
 		//if err != nil {
@@ -72,33 +75,38 @@ func shell(e *engine.Engine) {
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
 	filePath := flag.String("file", "", "file path")
+	isServer := flag.Bool("server", false, "start server")
+	callback := flag.String("callback", "", "callback mode")
 	flag.Parse()
 
-	if *filePath == "" {
+	if *callback != "" {
+		system, err := engine.InitSystem()
+		if err != nil {
+			logrus.Error(err)
+		}
+		defer system.Close()
+	}
+
+	if *isServer {
+		server.StartServer()
+	} else if *filePath != "" {
+		e, err := engine.CreateEngineByFile(*filePath)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+
+		if e == nil {
+			logrus.Error("engine is nil")
+			return
+		}
+
+		defer e.Close()
+
+		shell(e)
+	} else {
 		flag.PrintDefaults()
-		logrus.Errorf("file path is required")
 	}
-
-	//system, err := engine.InitSystem()
-	//if err != nil {
-	//	logrus.Error(err)
-	//}
-	//defer system.Close()
-
-	e, err := engine.CreateEngineByFile(*filePath)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-
-	if e == nil {
-		logrus.Error("engine is nil")
-		return
-	}
-
-	defer e.Close()
-
-	shell(e)
 
 	return
 }

@@ -10,10 +10,10 @@ import (
 	"os"
 )
 
-func Parser(data []byte) (*types.Config, error) {
+func Parser(data []byte, format string) (*types.Config, error) {
 	var cfg types.Config
 	v := viper.New()
-	v.SetConfigType("toml")
+	v.SetConfigType(format)
 
 	if err := v.ReadConfig(bytes.NewReader(data)); err != nil {
 		return nil, err
@@ -39,5 +39,5 @@ func ParserFile(filename string) (*types.Config, error) {
 		logrus.Errorf("read file error, %s", err)
 		return nil, fmt.Errorf("read file error, %s", err)
 	}
-	return Parser(data)
+	return Parser(data, "toml")
 }

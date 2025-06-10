@@ -5,36 +5,37 @@ import (
 	"eino-script/engine/nodes"
 	"eino-script/types"
 	"errors"
-	"github.com/cloudwego/eino/components/model"
+	"fmt"
 	"github.com/cloudwego/eino/compose"
+	"github.com/sirupsen/logrus"
 )
 
 func (e *Engine) CreateEmbeddingNode(cfg *types.NodeCfg) error {
 	return nil
 }
 
-func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) error {
-	data, err := nodes.CreateChatModelByFactroy(cfg)
-	if err != nil {
-		return err
-	}
-	m := data.(model.ToolCallingChatModel)
-
-	bindTool, ok := cfg.Attrs["bindtool"].(string)
-	if ok {
-		toolsInfo, ok := e.tools[bindTool]
-		if !ok {
-			return errors.New("bind tool not found: " + bindTool)
-		}
-		m, err = m.WithTools(toolsInfo)
-		if err != nil {
-			return err
-		}
-	}
-
-	e.models[cfg.Name] = m
-	return e.g.AddChatModelNode(cfg.Name, m)
-}
+//func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) error {
+//	data, err := nodes.CreateChatModelByFactroy(cfg)
+//	if err != nil {
+//		return err
+//	}
+//	m := data.(model.ToolCallingChatModel)
+//
+//	bindTool, ok := cfg.Attrs["bindtool"].(string)
+//	if ok {
+//		toolsInfo, ok := e.tools[bindTool]
+//		if !ok {
+//			return errors.New("bind tool not found: " + bindTool)
+//		}
+//		m, err = m.WithTools(toolsInfo)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//
+//	e.models[cfg.Name] = m
+//	return e.g.AddChatModelNode(cfg.Name, m)
+//}
 
 func (e *Engine) CreateChatTemplateNode(cfg *types.NodeCfg) error {
 	data, err := nodes.CreateChatTemplateByFactroy(cfg)
@@ -91,16 +92,6 @@ func (e *Engine) CreateTools(cfgs *[]types.NodeCfg) error {
 	return nil
 }
 
-func (e *Engine) CreateChatModels(cfgs *[]types.NodeCfg) error {
-	for _, cfg := range *cfgs {
-		err := e.CreateChatModelNode(&cfg)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (e *Engine) CreateChatTemplates(cfgs *[]types.NodeCfg) error {
 	for _, cfg := range *cfgs {
 		err := e.CreateChatTemplateNode(&cfg)
@@ -108,5 +99,34 @@ func (e *Engine) CreateChatTemplates(cfgs *[]types.NodeCfg) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (e *Engine) CreateNodes(cfgs *[]types.NodeCfg) error {
+	var node types.NodeInterface
+	var err error
+
+	for _, cfg := range *cfgs {
+		switch cfg.Type {
+		case types.NodeTypeStart:
+			node, err = CreateStartNode(&cfg)
+			break
+		case types.NodeTypeEnd:
+			node, err = CreateEndNode(&cfg)
+			break
+		case types.NodeTypeChartModel:
+			node, err = e.CreateChatModelNode(&cfg)
+			break
+		default:
+			err = errors.New(string("Unknown node type:" + cfg.Type))
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("创建节点失败(%s)：%s", cfg.Id, err.Error())
+		}
+
+		e.nodes[node.Id()] = node
+	}
+	logrus.Debug(e.nodes)
 	return nil
 }

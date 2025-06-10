@@ -3,7 +3,6 @@ package engine
 import (
 	"bytes"
 	"context"
-	"eino-script/components"
 	"eino-script/types"
 	"fmt"
 	"github.com/cloudwego/eino-ext/callbacks/apmplus"
@@ -16,10 +15,6 @@ import (
 	"io"
 	"os"
 )
-
-type Node struct {
-	Name string
-}
 
 type System struct {
 	shutdown func(ctx context.Context) error
@@ -73,6 +68,7 @@ func (s System) Close() error {
 }
 
 type Engine struct {
+	id     string
 	ctx    context.Context
 	g      *compose.Graph[map[string]any, *schema.Message]
 	r      compose.Runnable[map[string]any, *schema.Message]
@@ -80,6 +76,7 @@ type Engine struct {
 	mcps   map[string]types.IMcpServer
 	models map[string]model.ToolCallingChatModel
 	tools  map[string][]*schema.ToolInfo
+	nodes  map[string]types.NodeInterface
 }
 
 func CreateEngineByFile(filename string) (*Engine, error) {
@@ -90,8 +87,8 @@ func CreateEngineByFile(filename string) (*Engine, error) {
 	return CreateEngine(cfg)
 }
 
-func CreateEngineByData(data []byte) (*Engine, error) {
-	cfg, err := Parser(data)
+func CreateEngineByData(data []byte, format string) (*Engine, error) {
+	cfg, err := Parser(data, format)
 	if err != nil {
 		return nil, err
 	}
@@ -101,48 +98,56 @@ func CreateEngineByData(data []byte) (*Engine, error) {
 func CreateEngine(cfg *types.Config) (*Engine, error) {
 	var err error
 	e := &Engine{}
+	e.id = cfg.Id
 	e.ctx = context.Background()
 	e.mcps = make(map[string]types.IMcpServer)
 	e.tools = make(map[string][]*schema.ToolInfo)
 	e.models = make(map[string]model.ToolCallingChatModel)
+	e.nodes = make(map[string]types.NodeInterface)
 	e.g = compose.NewGraph[map[string]any, *schema.Message]()
 
-	for _, mcpCfg := range cfg.McpServers {
-		logrus.Infof("mcpCfg: %s", mcpCfg.Name)
-		switch mcpCfg.Type {
-		case "SSEServer":
-			server, err := components.CreateMcpSSEServer(&mcpCfg)
-			if err != nil {
-				return nil, err
-			}
-			e.mcps[mcpCfg.Name] = server
-		}
-	}
-
-	err = e.CreateChatTemplates(&cfg.ChatTemplates)
+	err = e.CreateNodes(&cfg.Nodes)
 	if err != nil {
 		return nil, err
 	}
 
-	err = e.CreateTools(&cfg.Tools)
-	if err != nil {
-		return nil, err
-	}
-
-	err = e.CreateChatModels(&cfg.ChatModels)
-	if err != nil {
-		return nil, err
-	}
-
+	//for _, mcpCfg := range cfg.McpServers {
+	//	logrus.Infof("mcpCfg: %s", mcpCfg.Name)
+	//	switch mcpCfg.Type {
+	//	case "SSEServer":
+	//		server, err := components.CreateMcpSSEServer(&mcpCfg)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		e.mcps[mcpCfg.Name] = server
+	//	}
+	//}
+	//
+	//err = e.CreateChatTemplates(&cfg.ChatTemplates)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//err = e.CreateTools(&cfg.Tools)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//err = e.CreateChatModels(&cfg.ChatModels)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
 	for _, edgeCfg := range cfg.Edges {
 		err = e.AddEdge(&edgeCfg)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	e.g.AddBranch("a", branch)
-
+	//}
+	//
+	////e.g.AddBranch("a", branch)
+	//
 	e.r, err = e.g.Compile(e.ctx, compose.WithMaxRunSteps(10))
 	if err != nil {
 		return nil, err
@@ -151,24 +156,16 @@ func CreateEngine(cfg *types.Config) (*Engine, error) {
 	return e, nil
 }
 
-func (e *Engine) Invoke(in map[string]any) error {
-	fmt.Println("Invoke: ", in)
-	ret, err := e.r.Invoke(e.ctx, in)
-	if err != nil {
-		return err
-	}
-	fmt.Println(ret)
-	return nil
+func (e *Engine) Id() string {
+	return e.id
 }
 
-func (e *Engine) Stream(in map[string]any) error {
-	var err error
-	fmt.Println("Stream: ", in)
-	e.s, err = e.r.Stream(e.ctx, in)
-	if err != nil {
-		return err
-	}
-	return nil
+func (e *Engine) Invoke(in map[string]any) (*schema.Message, error) {
+	return e.r.Invoke(e.ctx, in)
+}
+
+func (e *Engine) Stream(in map[string]any) (*schema.StreamReader[*schema.Message], error) {
+	return e.r.Stream(e.ctx, in)
 }
 
 func (e *Engine) Close() {

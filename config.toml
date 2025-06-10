@@ -1,0 +1,5 @@
+[[ApmPlusHandler]]
+Host="apmplus-cn-beijing.volces.com:4317"
+AppKey="66fbd23c50898feb13110f6ab650a55f"
+ServiceName="eino-app"
+Release="release/v0.0.1"
