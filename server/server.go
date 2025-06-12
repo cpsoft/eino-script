@@ -16,8 +16,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-var ()
-
 type Server struct {
 	db          *sql.DB
 	engineCache *LRUCache
@@ -49,14 +47,30 @@ func (s *Server) initDB(dbPath string) error {
 		return err
 	}
 
-	// 创建表（如果不存在）
-	createTableSQL := `
+	// 创建大模型表（如果不存在）
+	createModelTableSQL := `
+	CREATE TABLE IF NOT EXISTS models (
+		id TEXT PRIMARY KEY,
+		name TEXT,
+		modelType TEXT,
+		apiKey TEXT,
+		apiUrl TEXT,
+		maxContextLength INTEGER,
+		streamingEnabled BOOL
+	);`
+	_, err = s.db.Exec(createModelTableSQL)
+	if err != nil {
+		return err
+	}
+
+	// 创建工作流表（如果不存在）
+	createFlowTableSQL := `
 	CREATE TABLE IF NOT EXISTS flows (
 		id TEXT PRIMARY KEY,
 		name TEXT,
 		script TEXT NOT NULL
 	);`
-	_, err = s.db.Exec(createTableSQL)
+	_, err = s.db.Exec(createFlowTableSQL)
 	if err != nil {
 		return err
 	}
@@ -80,6 +94,9 @@ func (s *Server) saveFlow(jsonData []byte) error {
 	}
 
 	logrus.Debug("保存数据")
+	if flow.ID == "" || flow.Name == "" {
+		return fmt.Errorf("工作流ID（%s）或名字（%s）不能为空。", flow.ID, flow.Name)
+	}
 
 	// 插入或更新数据到数据库
 	upsertSQL := `
@@ -129,14 +146,20 @@ func (s *Server) deleteFlow(id string) error {
 	return nil
 }
 
+type MessageOrError struct {
+	Message string
+	Err     error
+}
+
 // 模拟大模型输出流
-func generateMessages(c chan string, e *engine.Engine, msg string) {
+func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
 	defer close(c)
 	in := map[string]interface{}{
 		"message": msg,
 	}
 	stream, err := e.Stream(in)
 	if err != nil {
+		c <- MessageOrError{Err: err}
 		return
 	}
 	defer stream.Close()
@@ -148,10 +171,11 @@ func generateMessages(c chan string, e *engine.Engine, msg string) {
 		}
 		if err != nil {
 			logrus.Error("recv failed: %v", err)
+			c <- MessageOrError{Err: err}
 			return
 		}
 		logrus.Info(message)
-		c <- fmt.Sprintf(`{"message":"%s"}`, message.Content)
+		c <- MessageOrError{Message: fmt.Sprintf(`{"message":"%s"}`, message.Content)}
 	}
 }
 
@@ -190,6 +214,9 @@ func StartServer() {
 	router.POST("/api/flow/run", s.handlePlayFlow)
 	router.POST("/api/flow/message", s.handleMessage)
 
+	router.GET("/api/model/list", s.handleGetModelList)
+	router.POST("/api/model/save", s.handleSaveModel)
+
 	err = router.Run()
 	if err != nil {
 		return
@@ -221,7 +248,7 @@ type FlowListItem struct {
 }
 
 // 查询 ID 和 Name 列表
-func fetchItems(db *sql.DB) ([]FlowListItem, error) {
+func fetchFlowItems(db *sql.DB) ([]FlowListItem, error) {
 	query := `SELECT id, name FROM flows`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -263,7 +290,7 @@ func Success(c *gin.Context, data interface{}) {
 
 func (s *Server) handleGetFlowList(c *gin.Context) {
 	// 查询数据
-	items, err := fetchItems(s.db)
+	items, err := fetchFlowItems(s.db)
 	logrus.Debug("items:", items)
 	if err != nil {
 		Error(c, 300, "读取数据失败："+err.Error())
@@ -405,7 +432,7 @@ func (s *Server) handlePlayFlow(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"code": http.StatusInternalServerError,
 			"data": gin.H{
-				"message": err,
+				"message": err.Error(),
 			},
 		})
 		return
@@ -474,14 +501,117 @@ func (s *Server) handleMessage(c *gin.Context) {
 		return
 	}
 
-	messageChan := make(chan string)
-	go generateMessages(messageChan, e, body.Message)
+	messages := make(chan MessageOrError)
+	go generateMessages(messages, e, body.Message)
 
-	for msg := range messageChan {
-		fmt.Fprintf(c.Writer, "data: %s\n\n", msg)
+	for msg := range messages {
+		if msg.Err != nil {
+			Error(c, http.StatusInternalServerError, msg.Err.Error())
+			return
+		}
+		_, _ = fmt.Fprintf(c.Writer, "data: %s\n\n", msg.Message)
 		flusher.Flush()
 	}
 
 	c.Writer.WriteHeaderNow()
 
+}
+
+type ModelItem struct {
+	ID               string `json:"id"`
+	ModelName        string `json:"modelName"`
+	ModelType        string `json:"modelType"`
+	ApiKey           string `json:"apiKey"`
+	ApiUrl           string `json:"apiUrl"`
+	MaxContextLength int    `json:"maxContextLength"`
+	StreamingEnabled bool   `json:"streamingEnabled"`
+}
+
+// 查询 ID 和 Name 列表
+func fetchModelItems(db *sql.DB) ([]ModelItem, error) {
+	query := `SELECT id, name, modelType, apiKey, apiUrl, maxContextLength, streamingEnabled FROM models`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query items: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]ModelItem, 0)
+	for rows.Next() {
+		var item ModelItem
+		if err := rows.Scan(
+			&item.ID,
+			&item.ModelName,
+			&item.ModelType,
+			&item.ApiKey,
+			&item.ApiUrl,
+			&item.MaxContextLength,
+			&item.StreamingEnabled,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		items = append(items, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during iteration: %w", err)
+	}
+
+	return items, nil
+}
+
+func (s *Server) handleGetModelList(c *gin.Context) {
+	// 查询数据
+	items, err := fetchModelItems(s.db)
+	logrus.Debug("items:", items)
+	if err != nil {
+		Error(c, 300, "读取数据失败："+err.Error())
+		return
+	}
+
+	Success(c, items)
+
+}
+
+func (s *Server) handleSaveModel(c *gin.Context) {
+	body, err := c.GetRawData()
+	if err != nil {
+		logrus.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"Error": err,
+		})
+	}
+
+	logrus.Debug(string(body))
+
+	var model ModelItem
+	err = json.Unmarshal(body, &model)
+	if err != nil {
+		logrus.Error("模型数据解析错误:", err.Error())
+		Error(c, http.StatusBadRequest, "模型数据解析错误")
+		return
+	}
+
+	// 插入或更新数据到数据库
+	upsertSQL := `
+	INSERT INTO models (id, name, modelType, apiKey, apiUrl, maxContextLength, streamingEnabled) 
+	VALUES (?, ?, ?, ?, ?, ?, ?)
+	ON CONFLICT(id) DO UPDATE SET 
+		name = excluded.name, 
+		modelType = excluded.modelType,
+	           apiKey = excluded.apiKey,
+	           apiUrl = excluded.apiUrl,
+	           maxContextLength = excluded.maxContextLength,
+	           streamingEnabled = excluded.streamingEnabled
+	           
+	`
+	_, err = s.db.Exec(upsertSQL, model.ID, model.ModelName, model.ModelType, model.ApiKey, model.ApiUrl,
+		model.MaxContextLength, model.StreamingEnabled)
+	if err != nil {
+		logrus.Debug("大模型插入错误：", err.Error())
+		Error(c, 200, "插入大模型错误："+err.Error())
+		return
+	}
+
+	Success(c, gin.H{"message": "保存成功"})
 }
