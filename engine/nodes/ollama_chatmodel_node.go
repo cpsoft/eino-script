@@ -3,7 +3,6 @@ package nodes
 import (
 	"context"
 	"eino-script/types"
-	"errors"
 	"fmt"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino/components/model"
@@ -16,7 +15,7 @@ type OllamaConfig struct {
 	Model   string
 }
 
-func CreateOllamaChatModelNode(cfg *types.NodeCfg) (model.ToolCallingChatModel, error) {
+func CreateOllamaChatModelNode(info *types.ModelInfo, cfg *types.NodeCfg) (model.ToolCallingChatModel, error) {
 	logrus.Infof("CreateOllamaChatModelNode: %+v", *cfg)
 
 	data, ok := cfg.Attrs["data"].(map[string]interface{})
@@ -24,25 +23,16 @@ func CreateOllamaChatModelNode(cfg *types.NodeCfg) (model.ToolCallingChatModel, 
 		return nil, fmt.Errorf("data not found in attrs")
 	}
 
-	BaseUrl, ok := data["base_url"].(string)
+	Temperature, ok := data["temperature"].(float32)
 	if !ok {
-		//return nil, errors.New("base url not found in config")
-		BaseUrl = "http://localhost:11434/"
-	}
-
-	Model, ok := data["model"].(string)
-	if !ok {
-		return nil, errors.New("model not found in config")
+		Temperature = 0.7
 	}
 
 	model, err := ollama.NewChatModel(context.Background(), &ollama.ChatModelConfig{
-		BaseURL: BaseUrl,
-		Model:   Model,
-		//Timeout: 30 * time.Second,
-		//Format:  json.RawMessage(`"json"`),
+		BaseURL: info.ApiUrl,
+		Model:   info.ModelName,
 		Options: &api.Options{
-			Temperature: 0.7,
-			//NumPredict:  100,
+			Temperature: Temperature,
 		},
 	})
 	if err != nil {

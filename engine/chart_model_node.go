@@ -3,6 +3,9 @@ package engine
 import (
 	"eino-script/engine/nodes"
 	"eino-script/types"
+	"fmt"
+	"github.com/cloudwego/eino/components/model"
+	"github.com/sirupsen/logrus"
 )
 
 type ChatModelNode struct {
@@ -53,11 +56,38 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 		return nil, err
 	}
 
-	node.chatModelId = id + "-" + "chatmodel"
-	chatModel, err := nodes.CreateOllamaChatModelNode(cfg)
+	data, ok := cfg.Attrs["data"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("data not found in attrs")
+	}
+	logrus.Debug(data)
+
+	ModelId, ok := data["model"].(string)
+	if !ok {
+		return nil, fmt.Errorf("model not found in config")
+	}
+
+	if e.callbacks == nil {
+		return nil, fmt.Errorf("engine的回调函数没有配置。")
+	}
+	info, err := e.callbacks.GetModelInfo(ModelId)
 	if err != nil {
 		return nil, err
 	}
+
+	var chatModel model.ToolCallingChatModel
+	switch info.ModelType {
+	case "ollama":
+		chatModel, err = nodes.CreateOllamaChatModelNode(info, cfg)
+		if err != nil {
+			return nil, err
+		}
+	case "openai":
+	default:
+		return nil, fmt.Errorf("模型类型不正确:(" + info.ModelType + ")")
+	}
+
+	node.chatModelId = id + "-" + "chatmodel"
 	err = e.g.AddChatModelNode(node.chatModelId, chatModel)
 	if err != nil {
 		return nil, err

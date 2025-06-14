@@ -68,37 +68,39 @@ func (s System) Close() error {
 }
 
 type Engine struct {
-	id     string
-	ctx    context.Context
-	g      *compose.Graph[map[string]any, *schema.Message]
-	r      compose.Runnable[map[string]any, *schema.Message]
-	s      *schema.StreamReader[*schema.Message]
-	mcps   map[string]types.IMcpServer
-	models map[string]model.ToolCallingChatModel
-	tools  map[string][]*schema.ToolInfo
-	nodes  map[string]types.NodeInterface
+	id        string
+	ctx       context.Context
+	callbacks Callbacks
+	g         *compose.Graph[map[string]any, *schema.Message]
+	r         compose.Runnable[map[string]any, *schema.Message]
+	s         *schema.StreamReader[*schema.Message]
+	mcps      map[string]types.IMcpServer
+	models    map[string]model.ToolCallingChatModel
+	tools     map[string][]*schema.ToolInfo
+	nodes     map[string]types.NodeInterface
 }
 
-func CreateEngineByFile(filename string) (*Engine, error) {
+func CreateEngineByFile(callbacks Callbacks, filename string) (*Engine, error) {
 	cfg, err := ParserFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	return CreateEngine(cfg)
+	return CreateEngine(callbacks, cfg)
 }
 
-func CreateEngineByData(data []byte, format string) (*Engine, error) {
+func CreateEngineByData(callbacks Callbacks, data []byte, format string) (*Engine, error) {
 	cfg, err := Parser(data, format)
 	if err != nil {
 		return nil, err
 	}
-	return CreateEngine(cfg)
+	return CreateEngine(callbacks, cfg)
 }
 
-func CreateEngine(cfg *types.Config) (*Engine, error) {
+func CreateEngine(callbacks Callbacks, cfg *types.Config) (*Engine, error) {
 	var err error
 	e := &Engine{}
 	e.id = cfg.Id
+	e.callbacks = callbacks
 	e.ctx = context.Background()
 	e.mcps = make(map[string]types.IMcpServer)
 	e.tools = make(map[string][]*schema.ToolInfo)
