@@ -49,6 +49,7 @@ func (s *Server) initDB(dbPath string) error {
 		id TEXT PRIMARY KEY,
 		name TEXT,
 		modelType TEXT,
+		modelName TEXT,
 		apiKey TEXT,
 		apiUrl TEXT,
 		maxContextLength INTEGER,
@@ -112,7 +113,7 @@ func StartServer() {
 	router.GET("/api/model/list", s.handleGetModelList)
 	router.POST("/api/model/save", s.handleSaveModel)
 	router.POST("api/model/delete", s.handleDeleteModel)
-	router.POST("/api/model/ollama/modelsname", s.handleOllamaModelNames)
+	router.POST("/api/model/chatmodel/list", s.handleChatModelList)
 
 	err = router.Run()
 	if err != nil {

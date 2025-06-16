@@ -15,11 +15,12 @@ type NodeInterface interface {
 }
 
 type ModelInfo struct {
-	ID               string `json:"id"`
-	ModelName        string `json:"modelName"`
-	ModelType        string `json:"modelType"`
+	ID               string `json:"id"`        // 模型ID
+	Name             string `json:"name"`      // 模型名称
+	ModelType        string `json:"modelType"` // 模型类型 ollama、openai
+	ModelName        string `json:"modelName"` // 大模型名称
 	ApiKey           string `json:"apiKey"`
 	ApiUrl           string `json:"apiUrl"`
-	MaxContextLength int    `json:"maxContextLength"`
+	MaxContextLength int    `json:"maxContextLength"` // 最大token数
 	StreamingEnabled bool   `json:"streamingEnabled"`
 }

@@ -10,11 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type OllamaConfig struct {
-	BaseUrl string
-	Model   string
-}
-
 func CreateOllamaChatModelNode(info *types.ModelInfo, cfg *types.NodeCfg) (model.ToolCallingChatModel, error) {
 	logrus.Infof("CreateOllamaChatModelNode: %+v", *cfg)
 

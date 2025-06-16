@@ -79,12 +79,14 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 	switch info.ModelType {
 	case "ollama":
 		chatModel, err = nodes.CreateOllamaChatModelNode(info, cfg)
-		if err != nil {
-			return nil, err
-		}
 	case "openai":
+		chatModel, err = nodes.CreateOpenaiChatModelNode(info, cfg)
 	default:
 		return nil, fmt.Errorf("模型类型不正确:(" + info.ModelType + ")")
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	node.chatModelId = id + "-" + "chatmodel"

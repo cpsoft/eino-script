@@ -5,16 +5,17 @@ import (
 	"eino-script/engine"
 	"eino-script/types"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"net/url"
+	"strings"
 )
 
 // 查询 ID 和 Name 列表
 func fetchModelItems(db *sql.DB) ([]types.ModelInfo, error) {
-	query := `SELECT id, name, modelType, apiKey, apiUrl, maxContextLength, streamingEnabled FROM models`
+	query := `SELECT id, name, modelType, modelName, apiKey, apiUrl, maxContextLength, streamingEnabled FROM models`
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query items: %w", err)
@@ -26,8 +27,9 @@ func fetchModelItems(db *sql.DB) ([]types.ModelInfo, error) {
 		var item types.ModelInfo
 		if err := rows.Scan(
 			&item.ID,
-			&item.ModelName,
+			&item.Name,
 			&item.ModelType,
+			&item.ModelName,
 			&item.ApiKey,
 			&item.ApiUrl,
 			&item.MaxContextLength,
@@ -77,20 +79,22 @@ func (s *Server) handleSaveModel(c *gin.Context) {
 
 	// 插入或更新数据到数据库
 	upsertSQL := `
-	INSERT INTO models (id, name, modelType, apiKey, apiUrl, maxContextLength, streamingEnabled) 
-	VALUES (?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO models (id, name, modelType, modelName, apiKey, apiUrl, maxContextLength, streamingEnabled) 
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	ON CONFLICT(id) DO UPDATE SET 
 		name = excluded.name, 
 		modelType = excluded.modelType,
-	           apiKey = excluded.apiKey,
-	           apiUrl = excluded.apiUrl,
-	           maxContextLength = excluded.maxContextLength,
-	           streamingEnabled = excluded.streamingEnabled
+		modelName = excluded.modelName,
+	    apiKey = excluded.apiKey,
+	    apiUrl = excluded.apiUrl,
+	    maxContextLength = excluded.maxContextLength,
+	    streamingEnabled = excluded.streamingEnabled
 	           
 	`
 	_, err = s.db.Exec(upsertSQL,
-		model.ID, model.ModelName,
-		model.ModelType, model.ApiKey, model.ApiUrl,
+		model.ID, model.Name,
+		model.ModelType, model.ModelName,
+		model.ApiKey, model.ApiUrl,
 		model.MaxContextLength, model.StreamingEnabled)
 	if err != nil {
 		logrus.Debug("大模型插入错误：", err.Error())
@@ -170,45 +174,18 @@ type GetOllamaModelNamesRequest struct {
 	Url string `json:"url"`
 }
 
-func (s *Server) handleOllamaModelNames(c *gin.Context) {
-	data, err := c.GetRawData()
-	if err != nil {
-		Error(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	var body GetOllamaModelNamesRequest
-	err = json.Unmarshal(data, &body)
-	if err != nil {
-		Error(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	baseUrl, err := url.Parse(body.Url)
-	if err != nil {
-		Error(c, http.StatusBadRequest, "Ollama 服务URL错误。"+body.Url)
-		return
-	}
-
-	models, err := engine.GetOllamaModels(baseUrl)
-	if err != nil {
-		Error(c, http.StatusInternalServerError, "获取模型失败："+err.Error())
-		return
-	}
-
-	Success(c, models)
-}
-
 // 根据 ID 获取模型记录
 func (s *Server) getModelByID(id string) (*types.ModelInfo, error) {
 	// 准备 SQL 查询语句
-	query := "SELECT id, name, modelType, apiKey, apiUrl, maxContextLength, StreamingEnabled FROM models WHERE id = ?"
+	query := "SELECT id, name, modelType, modelName, apiKey, apiUrl, maxContextLength, StreamingEnabled FROM models WHERE id = ?"
 	row := s.db.QueryRow(query, id)
 
 	// 解析查询结果
 	var model types.ModelInfo
 	err := row.Scan(&model.ID,
-		&model.ModelName,
+		&model.Name,
 		&model.ModelType,
+		&model.ModelName,
 		&model.ApiKey,
 		&model.ApiUrl,
 		&model.MaxContextLength,
@@ -225,4 +202,40 @@ func (s *Server) getModelByID(id string) (*types.ModelInfo, error) {
 
 func (s *Server) GetModelInfo(id string) (*types.ModelInfo, error) {
 	return s.getModelByID(id)
+}
+
+func (s *Server) handleChatModelList(c *gin.Context) {
+	data, err := c.GetRawData()
+	if err != nil {
+		Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var body types.ModelInfo
+	err = json.Unmarshal(data, &body)
+	if err != nil {
+		Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	models := make([]string, 0)
+	modelType := strings.ToLower(strings.TrimSpace(body.ModelType))
+	logrus.Debug("modelType:", modelType)
+	switch modelType {
+	case "ollama":
+		models, err = engine.GetOllamaModels(&body)
+	case "openai":
+		models, err = engine.GetOpenaiModels(&body)
+	default:
+		err = errors.New("模型类型不正确")
+	}
+
+	if err != nil {
+		Error(c, http.StatusInternalServerError, "获取模型失败："+err.Error())
+		return
+	}
+
+	logrus.Debug("list:", models)
+
+	Success(c, models)
 }
