@@ -43,6 +43,19 @@ func (s *Server) initDB(dbPath string) error {
 		return err
 	}
 
+	// 创建MCP列表（如果不存在）
+	createMcpTableSQL := `
+	CREATE TABLE IF NOT EXISTS mcps (
+		id TEXT PRIMARY KEY,
+		name TEXT,
+		mcpType TEXT,
+		url TEXT	
+	);`
+	_, err = s.db.Exec(createMcpTableSQL)
+	if err != nil {
+		return err
+	}
+
 	// 创建大模型表（如果不存在）
 	createModelTableSQL := `
 	CREATE TABLE IF NOT EXISTS models (
@@ -114,6 +127,11 @@ func StartServer() {
 	router.POST("/api/model/save", s.handleSaveModel)
 	router.POST("api/model/delete", s.handleDeleteModel)
 	router.POST("/api/model/chatmodel/list", s.handleChatModelList)
+
+	router.GET("/api/mcp/list", s.handleGetMcpList)
+	router.POST("/api/mcp/save", s.handleSaveMcp)
+	router.POST("api/mcp/delete", s.handleDeleteMcp)
+	router.POST("api/mcp/getCaps", s.handleMcpCaps)
 
 	err = router.Run()
 	if err != nil {

@@ -24,3 +24,10 @@ type ModelInfo struct {
 	MaxContextLength int    `json:"maxContextLength"` // 最大token数
 	StreamingEnabled bool   `json:"streamingEnabled"`
 }
+
+type McpInfo struct {
+	ID      string `json:"id"`      // 模型ID
+	Name    string `json:"name"`    // 模型名称
+	McpType string `json:"mcpType"` // 模型类型 ollama、openai
+	Url     string `json:"url"`
+}

@@ -5,10 +5,12 @@ type NodeType string
 
 // 枚举值
 const (
-	NodeTypeStart      NodeType = "start"
-	NodeTypeEnd        NodeType = "end"
-	NodeTypeChartModel NodeType = "chatmodel"
-	NodeTypeEvent      NodeType = "event"
+	NodeTypeStart        NodeType = "start"
+	NodeTypeEnd          NodeType = "end"
+	NodeTypeChatModel    NodeType = "chatmodel"
+	NodeTypeChatTemplate NodeType = "chatTemplate"
+	NodeTypeMcpTemplate  NodeType = "chatMcpTemplate"
+	NodeTypeEvent        NodeType = "event"
 )
 
 type Point struct {

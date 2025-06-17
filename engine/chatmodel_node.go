@@ -10,8 +10,6 @@ import (
 
 type ChatModelNode struct {
 	types.Node
-	templateId  string
-	chatModelId string
 }
 
 func (e ChatModelNode) Id() string {
@@ -23,11 +21,11 @@ func (e ChatModelNode) Type() (types.NodeType, error) {
 }
 
 func (cm *ChatModelNode) GetTargetId() (string, error) {
-	return cm.templateId, nil
+	return cm.NodeId, nil
 }
 
 func (cm *ChatModelNode) GetSourceId() (string, error) {
-	return cm.chatModelId, nil
+	return cm.NodeId, nil
 }
 
 func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
@@ -42,17 +40,6 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 
 	id := node.Id()
 	if id == "" {
-		return nil, err
-	}
-
-	node.templateId = id + "-" + "template"
-	template, err := nodes.CreateChatTemplateNode(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	err = e.g.AddChatTemplateNode(node.templateId, template)
-	if err != nil {
 		return nil, err
 	}
 
@@ -89,15 +76,10 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 		return nil, err
 	}
 
-	node.chatModelId = id + "-" + "chatmodel"
-	err = e.g.AddChatModelNode(node.chatModelId, chatModel)
+	err = e.g.AddChatModelNode(id, chatModel)
 	if err != nil {
 		return nil, err
 	}
 
-	err = e.g.AddEdge(node.templateId, node.chatModelId)
-	if err != nil {
-		return nil, err
-	}
 	return node, nil
 }

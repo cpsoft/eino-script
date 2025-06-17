@@ -113,43 +113,12 @@ func CreateEngine(callbacks Callbacks, cfg *types.Config) (*Engine, error) {
 		return nil, err
 	}
 
-	//for _, mcpCfg := range cfg.McpServers {
-	//	logrus.Infof("mcpCfg: %s", mcpCfg.Name)
-	//	switch mcpCfg.Type {
-	//	case "SSEServer":
-	//		server, err := components.CreateMcpSSEServer(&mcpCfg)
-	//		if err != nil {
-	//			return nil, err
-	//		}
-	//		e.mcps[mcpCfg.Name] = server
-	//	}
-	//}
-	//
-	//err = e.CreateChatTemplates(&cfg.ChatTemplates)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//err = e.CreateTools(&cfg.Tools)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//err = e.CreateChatModels(&cfg.ChatModels)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
 	for _, edgeCfg := range cfg.Edges {
 		err = e.AddEdge(&edgeCfg)
 		if err != nil {
 			return nil, err
 		}
 	}
-	//}
-	//
-	////e.g.AddBranch("a", branch)
-	//
 	e.r, err = e.g.Compile(e.ctx, compose.WithMaxRunSteps(10))
 	if err != nil {
 		return nil, err

@@ -17,9 +17,11 @@ func CreateChatTemplateNode(cfg *types.NodeCfg) (prompt.ChatTemplate, error) {
 		return nil, fmt.Errorf("data not found in attrs")
 	}
 
-	systemMsg, ok := data["scene"].(string)
+	logrus.Debug("attrs:", data)
+
+	systemMsg, ok := data["systemmessage"].(string)
 	if !ok {
-		return nil, fmt.Errorf("scene not found in attrs")
+		return nil, fmt.Errorf("systemMessage not found in attrs")
 	}
 	messagesTemplate = append(messagesTemplate, schema.SystemMessage(systemMsg))
 
