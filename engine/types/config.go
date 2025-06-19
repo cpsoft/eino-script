@@ -38,16 +38,8 @@ type McpServerCfg struct {
 	Attrs map[string]interface{} `mapstructure:",remain"`
 }
 
-//type Config struct {
-//	Tools         []NodeCfg      `mapstructure:"Tool"`
-//	ChatModels    []NodeCfg      `mapstructure:"ChatModel"`
-//	ChatTemplates []NodeCfg      `mapstructure:"ChatTemplate"`
-//	Edges         []EdgeCfg      `mapstructure:"Edge"`
-//	McpServers    []McpServerCfg `mapstructure:"McpServer"`
-//}
-
 type Config struct {
-	Id    string    `mapstructure:"id"`
+	Id    uint      `mapstructure:"id"`
 	Nodes []NodeCfg `mapstructure:"nodes"`
 	Edges []EdgeCfg `mapstructure:"edges"`
 }

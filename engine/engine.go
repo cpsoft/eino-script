@@ -3,7 +3,7 @@ package engine
 import (
 	"bytes"
 	"context"
-	"eino-script/types"
+	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino-ext/callbacks/apmplus"
 	"github.com/cloudwego/eino/callbacks"
@@ -68,9 +68,9 @@ func (s System) Close() error {
 }
 
 type Engine struct {
-	id        string
+	id        uint
 	ctx       context.Context
-	callbacks Callbacks
+	callbacks types.Callbacks
 	g         *compose.Graph[map[string]any, *schema.Message]
 	r         compose.Runnable[map[string]any, *schema.Message]
 	s         *schema.StreamReader[*schema.Message]
@@ -80,7 +80,7 @@ type Engine struct {
 	nodes     map[string]types.NodeInterface
 }
 
-func CreateEngineByFile(callbacks Callbacks, filename string) (*Engine, error) {
+func CreateEngineByFile(callbacks types.Callbacks, filename string) (*Engine, error) {
 	cfg, err := ParserFile(filename)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func CreateEngineByFile(callbacks Callbacks, filename string) (*Engine, error) {
 	return CreateEngine(callbacks, cfg)
 }
 
-func CreateEngineByData(callbacks Callbacks, data []byte, format string) (*Engine, error) {
+func CreateEngineByData(callbacks types.Callbacks, data []byte, format string) (*Engine, error) {
 	cfg, err := Parser(data, format)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func CreateEngineByData(callbacks Callbacks, data []byte, format string) (*Engin
 	return CreateEngine(callbacks, cfg)
 }
 
-func CreateEngine(callbacks Callbacks, cfg *types.Config) (*Engine, error) {
+func CreateEngine(callbacks types.Callbacks, cfg *types.Config) (*Engine, error) {
 	var err error
 	e := &Engine{}
 	e.id = cfg.Id
@@ -127,7 +127,7 @@ func CreateEngine(callbacks Callbacks, cfg *types.Config) (*Engine, error) {
 	return e, nil
 }
 
-func (e *Engine) Id() string {
+func (e *Engine) Id() uint {
 	return e.id
 }
 

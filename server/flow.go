@@ -1,83 +1,149 @@
 package server
 
 import (
-	"database/sql"
+	"bytes"
 	"eino-script/engine"
+	"eino-script/engine/types"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"io"
 	"net/http"
 )
 
 // 定义与 JSON 对应的结构体
 type SaveFlowRequestBody struct {
-	ID   string `json:"id"` // 对应 JSON 中的 "id" 字段
-	Name string `json:"name"`
+	ID    uint                   `mapstructure:"id"` // 对应 JSON 中的 "id" 字段
+	Name  string                 `mapstructure:"name"`
+	Attrs map[string]interface{} `mapstructure:",remain"`
 }
 
 // saveFlow 函数：保存 JSON 数据到 SQLite
-func (s *Server) saveFlow(jsonData []byte) error {
+func (s *Server) saveFlow(jsonData []byte) (uint, error) {
 	// 解析 JSON 数据
-	var flow SaveFlowRequestBody
-	err := json.Unmarshal(jsonData, &flow)
-	if err != nil {
-		return fmt.Errorf("failed to parse JSON: %w", err)
+	var req SaveFlowRequestBody
+	v := viper.New()
+	v.SetConfigType("json")
+	if err := v.ReadConfig(bytes.NewReader(jsonData)); err != nil {
+		return 0, err
 	}
 
-	logrus.Debug("保存数据")
-	if flow.ID == "" || flow.Name == "" {
-		return fmt.Errorf("工作流ID（%s）或名字（%s）不能为空。", flow.ID, flow.Name)
+	if err := v.Unmarshal(&req); err != nil {
+		return 0, err
+	}
+
+	if req.Name == "" {
+		return 0, fmt.Errorf("工作流名字（%s）不能为空。", req.Name)
+	}
+
+	logrus.Debug("保存数据", req.Attrs)
+	script, err := json.Marshal(req.Attrs)
+	if err != nil {
+		return 0, fmt.Errorf("工作流数据错误.")
+	}
+
+	flow := types.FlowInfo{
+		ID:     req.ID,
+		Name:   req.Name,
+		Script: string(script),
 	}
 
 	// 插入或更新数据到数据库
-	upsertSQL := `
-	INSERT INTO flows (id, name, script) 
-	VALUES (?, ?, ?)
-	ON CONFLICT(id) DO UPDATE SET 
-		name = excluded.name, 
-		script = excluded.script
-	`
-	_, err = s.db.Exec(upsertSQL, flow.ID, flow.Name, string(jsonData))
+	id, err := s.provider.SaveFlow(flow)
 	if err != nil {
-		return fmt.Errorf("failed to insert or update data: %w", err)
+		return 0, fmt.Errorf("插入工作流失败. %s", err.Error())
 	}
 
-	return nil
+	return id, nil
 }
 
-// deleteFlow 函数：保存 JSON 数据到 SQLite
-func (s *Server) deleteFlow(id string) error {
-	logrus.Debug("删除数据：", id)
-
-	var count int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM flows WHERE id = ?", id).Scan(&count)
+func (s *Server) handleSaveFlow(c *gin.Context) {
+	body, err := c.GetRawData()
 	if err != nil {
-		return fmt.Errorf("failed to check flow existence: %w", err)
+		logrus.Error(err)
+		Error(c, http.StatusBadRequest, "请求数据错误："+string(body))
+		return
 	}
 
-	if count == 0 {
-		return fmt.Errorf("flow with id %s not found", id)
-	}
-
-	deleteSQL := `DELETE FROM flows WHERE id=?`
-	result, err := s.db.Exec(deleteSQL, id)
+	logrus.Debug(string(body))
+	id, err := s.saveFlow(body)
 	if err != nil {
-		return fmt.Errorf("failed to delete item: %w", err)
+		logrus.Error(err)
+		Error(c, http.StatusInternalServerError, "保存失败："+err.Error())
+		return
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	Success(c, gin.H{
+		"id": id,
+	})
+}
+
+type DeleteFlowRequest struct {
+	ID uint `json:"id"`
+}
+
+func (s *Server) handleDeleteFlow(c *gin.Context) {
+	data, err := c.GetRawData()
+	logrus.Debug("delete data:", string(data))
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		Error(c, http.StatusBadRequest, "数据请求错误")
+		return
 	}
 
-	if rowsAffected == 0 {
-		return fmt.Errorf("item with id %s not found", id)
+	var body DeleteFlowRequest
+	err = json.Unmarshal(data, &body)
+	if err != nil {
+		Error(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	return nil
+	logrus.Debug("delete id:", body.ID)
+	s.provider.DeleteFlow(body.ID)
+	logrus.Debug("删除数据成功")
+	Success(c, "")
+}
+
+func (s *Server) handleGetFlowList(c *gin.Context) {
+	// 查询数据
+	flows, err := s.provider.GetFlowList()
+	if err != nil {
+		Error(c, 200, err.Error())
+		return
+	}
+	Success(c, flows)
+}
+
+type GetFlowRequest struct {
+	ID uint `json:"id"`
+}
+
+func (s *Server) handleGetFlow(c *gin.Context) {
+	data, err := c.GetRawData()
+	if err != nil {
+		Error(c, 300, err.Error())
+		return
+	}
+	// 解析 JSON 数据到结构体
+	var body GetFlowRequest
+	err = json.Unmarshal(data, &body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Error": err,
+		})
+		return
+	}
+
+	// 打印解析结果（或进行其他逻辑处理）
+	logrus.Infof("Parsed Body: ID=%s, Message=%s\n", body.ID)
+	flow, err := s.provider.GetFlow(body.ID)
+	if err != nil {
+		Error(c, 300, err.Error())
+		return
+	}
+	Success(c, flow)
 }
 
 type MessageOrError struct {
@@ -126,158 +192,6 @@ func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
 	}
 }
 
-type FlowListItem struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// 查询 ID 和 Name 列表
-func fetchFlowItems(db *sql.DB) ([]FlowListItem, error) {
-	query := `SELECT id, name FROM flows`
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query items: %w", err)
-	}
-	defer rows.Close()
-
-	var items []FlowListItem
-	for rows.Next() {
-		var item FlowListItem
-		if err := rows.Scan(&item.ID, &item.Name); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
-		}
-		items = append(items, item)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error during iteration: %w", err)
-	}
-
-	return items, nil
-}
-
-func (s *Server) handleGetFlowList(c *gin.Context) {
-	// 查询数据
-	items, err := fetchFlowItems(s.db)
-	logrus.Debug("items:", items)
-	if err != nil {
-		Error(c, 300, "读取数据失败："+err.Error())
-		return
-	}
-
-	Success(c, items)
-
-}
-
-// 根据 ID 查询单条记录
-func fetchItemByID(db *sql.DB, id string) (string, error) {
-	query := `SELECT script FROM flows WHERE id = ?`
-	row := db.QueryRow(query, id)
-
-	var script string
-	if err := row.Scan(&script); err != nil {
-		if err == sql.ErrNoRows {
-			return "", fmt.Errorf("item with id %s not found", id)
-		}
-		return "", fmt.Errorf("failed to scan row: %w", err)
-	}
-
-	return script, nil
-}
-
-type GetFlowRequest struct {
-	ID string `json:"id"`
-}
-
-func (s *Server) handleGetFlow(c *gin.Context) {
-	data, err := c.GetRawData()
-	if err != nil {
-		Error(c, 300, err.Error())
-		return
-	}
-	// 解析 JSON 数据到结构体
-	var body GetFlowRequest
-	err = json.Unmarshal(data, &body)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"Error": err,
-		})
-		return
-	}
-
-	// 打印解析结果（或进行其他逻辑处理）
-	logrus.Infof("Parsed Body: ID=%s, Message=%s\n", body.ID)
-	script, err := fetchItemByID(s.db, body.ID)
-	if err != nil {
-		Error(c, 300, err.Error())
-		return
-	}
-	Success(c, script)
-}
-
-func (s *Server) handleSaveFlow(c *gin.Context) {
-	body, err := c.GetRawData()
-	if err != nil {
-		logrus.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"Error": err,
-		})
-	}
-
-	logrus.Debug(string(body))
-	err = s.saveFlow(body)
-	if err != nil {
-		logrus.Error(err)
-		c.JSON(200, gin.H{
-			"code": "100",
-			"data": gin.H{
-				"message": "保存失败:" + err.Error(),
-			},
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"code": 200,
-		"data": gin.H{
-			"message": "保存成功",
-		},
-	})
-}
-
-type DeleteFlowRequest struct {
-	ID string `json:"id"`
-}
-
-func (s *Server) handleDeleteFlow(c *gin.Context) {
-	data, err := c.GetRawData()
-	logrus.Debug("delete data:", string(data))
-	if err != nil {
-		Error(c, http.StatusBadRequest, "数据请求错误")
-		return
-	}
-
-	var body DeleteFlowRequest
-	err = json.Unmarshal(data, &body)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"Error": err,
-		})
-		return
-	}
-
-	logrus.Debug("delete id:", body.ID)
-	err = s.deleteFlow(body.ID)
-	if err != nil {
-		logrus.Debug("删除失败：" + err.Error())
-		Error(c, 100, "删除失败："+err.Error())
-		return
-	}
-
-	logrus.Debug("删除数据成功")
-	Success(c, "")
-}
-
 func (s *Server) handlePlayFlow(c *gin.Context) {
 	body, err := c.GetRawData()
 	if err != nil {
@@ -287,7 +201,7 @@ func (s *Server) handlePlayFlow(c *gin.Context) {
 		})
 	}
 
-	err = s.saveFlow(body)
+	id, err := s.saveFlow(body)
 	if err != nil {
 		logrus.Error(err)
 		Error(c, 100, "保存失败")
@@ -307,17 +221,14 @@ func (s *Server) handlePlayFlow(c *gin.Context) {
 	}
 	s.engineCache.AddOrUpdate(e)
 
-	c.JSON(200, gin.H{
-		"code": 200,
-		"data": gin.H{
-			"message": "保存成功",
-		},
+	Success(c, gin.H{
+		"id": id,
 	})
 }
 
 // 定义与 JSON 对应的结构体
 type MessageRequestBody struct {
-	ID      string `json:"id"`      // 对应 JSON 中的 "id" 字段
+	ID      uint   `json:"id"`      // 对应 JSON 中的 "id" 字段
 	Message string `json:"message"` // 对应 JSON 中的 "message" 字段
 }
 
@@ -329,19 +240,18 @@ func (s *Server) handleMessage(c *gin.Context) {
 	data, err := c.GetRawData()
 	if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"Error": err,
-		})
+		Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	logrus.Debug("Message:", string(data))
 
 	// 解析 JSON 数据到结构体
 	var body MessageRequestBody
 	err = json.Unmarshal(data, &body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"Error": err,
-		})
+		logrus.Debug("message 解析错误：", err.Error())
+		Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 

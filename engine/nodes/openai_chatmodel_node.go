@@ -2,14 +2,14 @@ package nodes
 
 import (
 	"context"
-	"eino-script/types"
+	types2 "eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/sirupsen/logrus"
 )
 
-func CreateOpenaiChatModelNode(info *types.ModelInfo, cfg *types.NodeCfg) (model.ToolCallingChatModel, error) {
+func CreateOpenaiChatModelNode(info *types2.ModelInfo, cfg *types2.NodeCfg) (model.ToolCallingChatModel, error) {
 	logrus.Infof("CreateOpenaiChatModelNode: %+v", *cfg)
 
 	data, ok := cfg.Attrs["data"].(map[string]interface{})

@@ -2,7 +2,7 @@ package nodes
 
 import (
 	"context"
-	"eino-script/types"
+	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino-ext/components/prompt/mcp"
 	"github.com/cloudwego/eino/components/prompt"

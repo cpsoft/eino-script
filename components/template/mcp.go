@@ -2,7 +2,7 @@ package components
 
 import (
 	"context"
-	"eino-script/types"
+	"eino-script/engine/types"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/schema"
 )

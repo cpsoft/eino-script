@@ -8,7 +8,7 @@ import (
 // 定义 LRU 缓存结构体
 type LRUCache struct {
 	capacity int
-	cache    map[string]*CacheNode
+	cache    map[uint]*CacheNode
 	head     *CacheNode // 链表头节点（最近使用的）
 	tail     *CacheNode // 链表尾节点（最久未使用的）
 	mu       sync.Mutex // 互斥锁
@@ -16,7 +16,7 @@ type LRUCache struct {
 
 // 定义链表节点
 type CacheNode struct {
-	key  string
+	key  uint
 	val  *engine.Engine
 	prev *CacheNode
 	next *CacheNode
@@ -26,7 +26,7 @@ type CacheNode struct {
 func NewLRUCache(capacity int) *LRUCache {
 	return &LRUCache{
 		capacity: capacity,
-		cache:    make(map[string]*CacheNode),
+		cache:    make(map[uint]*CacheNode),
 	}
 }
 
@@ -55,7 +55,7 @@ func (lru *LRUCache) AddOrUpdate(val *engine.Engine) {
 }
 
 // 获取记录
-func (lru *LRUCache) Get(key string) (*engine.Engine, bool) {
+func (lru *LRUCache) Get(key uint) (*engine.Engine, bool) {
 	lru.mu.Lock()
 	defer lru.mu.Unlock()
 

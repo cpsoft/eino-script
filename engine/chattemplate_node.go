@@ -2,18 +2,18 @@ package engine
 
 import (
 	"eino-script/engine/nodes"
-	"eino-script/types"
+	types2 "eino-script/engine/types"
 )
 
 type ChatTemplateNode struct {
-	types.Node
+	types2.Node
 }
 
 func (e ChatTemplateNode) Id() string {
 	return e.NodeId
 }
 
-func (e ChatTemplateNode) Type() (types.NodeType, error) {
+func (e ChatTemplateNode) Type() (types2.NodeType, error) {
 	return e.NodeType, nil
 }
 
@@ -25,7 +25,7 @@ func (cm *ChatTemplateNode) GetSourceId() (string, error) {
 	return cm.NodeId, nil
 }
 
-func (e *Engine) CreateChatTemplateNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
+func (e *Engine) CreateChatTemplateNode(cfg *types2.NodeCfg) (types2.NodeInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err

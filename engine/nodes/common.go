@@ -1,7 +1,7 @@
 package nodes
 
 import (
-	"eino-script/types"
+	"eino-script/engine/types"
 	"errors"
 	"github.com/cloudwego/eino/components/prompt"
 )

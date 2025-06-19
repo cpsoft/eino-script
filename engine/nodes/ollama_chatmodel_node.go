@@ -2,7 +2,7 @@ package nodes
 
 import (
 	"context"
-	"eino-script/types"
+	types2 "eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino/components/model"
@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func CreateOllamaChatModelNode(info *types.ModelInfo, cfg *types.NodeCfg) (model.ToolCallingChatModel, error) {
+func CreateOllamaChatModelNode(info *types2.ModelInfo, cfg *types2.NodeCfg) (model.ToolCallingChatModel, error) {
 	logrus.Infof("CreateOllamaChatModelNode: %+v", *cfg)
 
 	data, ok := cfg.Attrs["data"].(map[string]interface{})

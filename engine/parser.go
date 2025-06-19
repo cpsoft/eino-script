@@ -2,7 +2,7 @@ package engine
 
 import (
 	"bytes"
-	"eino-script/types"
+	engine "eino-script/engine/types"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -10,8 +10,8 @@ import (
 	"os"
 )
 
-func Parser(data []byte, format string) (*types.Config, error) {
-	var cfg types.Config
+func Parser(data []byte, format string) (*engine.Config, error) {
+	var cfg engine.Config
 	v := viper.New()
 	v.SetConfigType(format)
 
@@ -26,7 +26,7 @@ func Parser(data []byte, format string) (*types.Config, error) {
 	return &cfg, nil
 }
 
-func ParserFile(filename string) (*types.Config, error) {
+func ParserFile(filename string) (*engine.Config, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		logrus.Error("open file error:", err)

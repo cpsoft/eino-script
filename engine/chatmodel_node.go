@@ -2,21 +2,21 @@ package engine
 
 import (
 	"eino-script/engine/nodes"
-	"eino-script/types"
+	types2 "eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/sirupsen/logrus"
 )
 
 type ChatModelNode struct {
-	types.Node
+	types2.Node
 }
 
 func (e ChatModelNode) Id() string {
 	return e.NodeId
 }
 
-func (e ChatModelNode) Type() (types.NodeType, error) {
+func (e ChatModelNode) Type() (types2.NodeType, error) {
 	return e.NodeType, nil
 }
 
@@ -28,7 +28,7 @@ func (cm *ChatModelNode) GetSourceId() (string, error) {
 	return cm.NodeId, nil
 }
 
-func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
+func (e *Engine) CreateChatModelNode(cfg *types2.NodeCfg) (types2.NodeInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 	}
 	logrus.Debug(data)
 
-	ModelId, ok := data["model"].(string)
+	ModelId, ok := data["model"].(float64)
 	if !ok {
 		return nil, fmt.Errorf("model not found in config")
 	}
@@ -57,7 +57,7 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 	if e.callbacks == nil {
 		return nil, fmt.Errorf("engine的回调函数没有配置。")
 	}
-	info, err := e.callbacks.GetModelInfo(ModelId)
+	info, err := e.callbacks.Callback_GetModelInfo(uint(ModelId))
 	if err != nil {
 		return nil, err
 	}

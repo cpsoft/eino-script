@@ -2,7 +2,7 @@ package engine
 
 import (
 	"context"
-	"eino-script/types"
+	"eino-script/engine/types"
 	"encoding/json"
 	"errors"
 	"fmt"

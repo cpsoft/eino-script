@@ -2,7 +2,7 @@ package components
 
 import (
 	"context"
-	"eino-script/types"
+	"eino-script/engine/types"
 	"encoding/json"
 	"fmt"
 	"github.com/cloudwego/eino/components/tool"

@@ -1,7 +1,7 @@
 package nodes
 
 import (
-	"eino-script/types"
+	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/schema"
@@ -21,7 +21,7 @@ func CreateChatTemplateNode(cfg *types.NodeCfg) (prompt.ChatTemplate, error) {
 
 	systemMsg, ok := data["systemmessage"].(string)
 	if !ok {
-		return nil, fmt.Errorf("systemMessage not found in attrs")
+		return nil, fmt.Errorf("聊天模板节点未填写系统描述")
 	}
 	messagesTemplate = append(messagesTemplate, schema.SystemMessage(systemMsg))
 

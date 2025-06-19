@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 	"eino-script/engine/nodes"
-	"eino-script/types"
+	types2 "eino-script/engine/types"
 	"errors"
 	"fmt"
 	"github.com/cloudwego/eino/compose"
@@ -11,7 +11,7 @@ import (
 )
 
 // MCPTools太过复杂，进行特殊处理
-func (e *Engine) CreateMcpToolsNode(cfg *types.NodeCfg) error {
+func (e *Engine) CreateMcpToolsNode(cfg *types2.NodeCfg) error {
 	serverName, ok := cfg.Attrs["server"].(string)
 	if serverName == "" {
 		return errors.New("CreateMcpTemplateNode: name is required")
@@ -34,25 +34,25 @@ func (e *Engine) CreateMcpToolsNode(cfg *types.NodeCfg) error {
 	return e.g.AddToolsNode(cfg.Name, data.(*compose.ToolsNode))
 }
 
-func (e *Engine) CreateNodes(cfgs *[]types.NodeCfg) error {
-	var node types.NodeInterface
+func (e *Engine) CreateNodes(cfgs *[]types2.NodeCfg) error {
+	var node types2.NodeInterface
 	var err error
 
 	for _, cfg := range *cfgs {
 		switch cfg.Type {
-		case types.NodeTypeStart:
+		case types2.NodeTypeStart:
 			node, err = CreateStartNode(&cfg)
 			break
-		case types.NodeTypeEnd:
+		case types2.NodeTypeEnd:
 			node, err = CreateEndNode(&cfg)
 			break
-		case types.NodeTypeChatModel:
+		case types2.NodeTypeChatModel:
 			node, err = e.CreateChatModelNode(&cfg)
 			break
-		case types.NodeTypeChatTemplate:
+		case types2.NodeTypeChatTemplate:
 			node, err = e.CreateChatTemplateNode(&cfg)
 			break
-		case types.NodeTypeMcpTemplate:
+		case types2.NodeTypeMcpTemplate:
 			node, err = e.CreateMcpTemplateNode(&cfg)
 			break
 		default:

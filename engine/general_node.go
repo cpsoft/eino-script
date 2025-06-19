@@ -1,12 +1,12 @@
 package engine
 
 import (
-	"eino-script/types"
+	types2 "eino-script/engine/types"
 	"fmt"
 )
 
-func CreateGeneralNode(cfg *types.NodeCfg) (*types.Node, error) {
-	node := &types.Node{
+func CreateGeneralNode(cfg *types2.NodeCfg) (*types2.Node, error) {
+	node := &types2.Node{
 		NodeId:   cfg.Id,
 		NodeType: cfg.Type,
 		Position: cfg.Position,
@@ -15,10 +15,10 @@ func CreateGeneralNode(cfg *types.NodeCfg) (*types.Node, error) {
 }
 
 type StartNode struct {
-	types.Node
+	types2.Node
 }
 
-func CreateStartNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
+func CreateStartNode(cfg *types2.NodeCfg) (types2.NodeInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (s StartNode) Id() string {
 	return s.NodeId
 }
 
-func (s StartNode) Type() (types.NodeType, error) {
+func (s StartNode) Type() (types2.NodeType, error) {
 	return s.NodeType, nil
 }
 
@@ -46,10 +46,10 @@ func (s *StartNode) GetTargetId() (string, error) {
 }
 
 type EndNode struct {
-	types.Node
+	types2.Node
 }
 
-func CreateEndNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
+func CreateEndNode(cfg *types2.NodeCfg) (types2.NodeInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (e EndNode) Id() string {
 	return e.NodeId
 }
 
-func (e EndNode) Type() (types.NodeType, error) {
+func (e EndNode) Type() (types2.NodeType, error) {
 	return e.NodeType, nil
 }
 

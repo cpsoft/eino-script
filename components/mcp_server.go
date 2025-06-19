@@ -2,7 +2,7 @@ package components
 
 import (
 	"context"
-	"eino-script/types"
+	types2 "eino-script/engine/types"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -157,7 +157,7 @@ func (m *McpServer) ListResources(ctx context.Context) (interface{}, error) {
 //	return &McpServer{mcpClient, caps}, nil
 //}
 
-func CreateMcpSSEServer(info *types.McpInfo) (types.IMcpServer, error) {
+func CreateMcpSSEServer(info *types2.McpInfo) (types2.IMcpServer, error) {
 	logrus.Debugf("CreateMcpSSEServer")
 	if info.Name == "" {
 		return nil, fmt.Errorf("Mcp服务名字不能为空。")
