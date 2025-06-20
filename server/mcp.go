@@ -239,10 +239,16 @@ func (s *Server) getMcpByID(id uint) (*types.McpInfo, error) {
 	return &info, nil
 }
 
-func (s *Server) Callback_CreateMcpServer(mcpId uint) (*types.IMcpServer, error) {
-	_, err := s.getMcpByID(mcpId)
+func (s *Server) Callback_CreateMcpServer(mcpId uint) (types.IMcpServer, error) {
+	info, err := s.getMcpByID(mcpId)
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+
+	mcp, err := components.CreateMcpSSEServer(info)
+	if err != nil {
+		return nil, err
+	}
+
+	return mcp, nil
 }

@@ -7,11 +7,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"io"
 	"net/http"
+	"reflect"
 )
 
 // 定义与 JSON 对应的结构体
@@ -165,7 +167,7 @@ func encodeToBase64(content string) string {
 func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
 	defer close(c)
 	in := map[string]interface{}{
-		"message": msg,
+		"outmessage": msg,
 	}
 	stream, err := e.Stream(in)
 	if err != nil {
@@ -184,7 +186,26 @@ func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
 			c <- MessageOrError{Err: err}
 			return
 		}
-		text := encodeToBase64(message.Content)
+
+		var text string
+		switch msg := message.(type) {
+		case string:
+			logrus.Debug("输出：" + msg)
+			text = encodeToBase64(msg)
+		case *schema.Message:
+			//logrus.Debug("输出：" + msg.Content)
+			text = encodeToBase64(msg.Content)
+		case map[string]interface{}:
+			logrus.Debugf("map[string]interface: %v", msg)
+			obj, _ := json.Marshal(msg)
+			text = encodeToBase64(fmt.Sprintf("%+v", string(obj)))
+			//c <- MessageOrError{Err: fmt.Errorf("未知输出类型")}
+		default:
+			v := reflect.TypeOf(message)
+			logrus.Debug("未知输出类型：" + v.String())
+			c <- MessageOrError{Err: fmt.Errorf("未知输出类型")}
+			return
+		}
 		response := MessageOrError{
 			Message: text,
 		}
@@ -297,7 +318,6 @@ func (s *Server) handleMessage(c *gin.Context) {
 		response := MessageResponse{
 			Message: msg.Message,
 		}
-		//fmt.Printf("data: %s\n\n", msg)
 		jsonData, err := json.Marshal(response)
 		if err != nil {
 			_, _ = fmt.Fprintf(c.Writer, "error: %s\n\n", msg.Err.Error())

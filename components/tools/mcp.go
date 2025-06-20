@@ -50,7 +50,7 @@ func (t *mcpToolHelper) InvokableRun(ctx context.Context, argumentsInJSON string
 
 func (t *mcpToolHelper) StreamableRun(ctx context.Context,
 	argumentsInJSON string, opts ...tool.Option) (*schema.StreamReader[string], error) {
-	logrus.Debugf("Tools Streamable Run: %s", argumentsInJSON)
+	logrus.Debugf("Tools (%s) Streamable Run: %s", t.info.Name, argumentsInJSON)
 	sr, sw := schema.Pipe[string](1)
 	go func() {
 		defer sw.Close()

@@ -71,8 +71,8 @@ type Engine struct {
 	id        uint
 	ctx       context.Context
 	callbacks types.Callbacks
-	g         *compose.Graph[map[string]any, *schema.Message]
-	r         compose.Runnable[map[string]any, *schema.Message]
+	g         *compose.Graph[any, any]
+	r         compose.Runnable[any, any]
 	s         *schema.StreamReader[*schema.Message]
 	mcps      map[string]types.IMcpServer
 	models    map[string]model.ToolCallingChatModel
@@ -96,17 +96,26 @@ func CreateEngineByData(callbacks types.Callbacks, data []byte, format string) (
 	return CreateEngine(callbacks, cfg)
 }
 
-func CreateEngine(callbacks types.Callbacks, cfg *types.Config) (*Engine, error) {
+func CreateEngine(cb types.Callbacks, cfg *types.Config) (*Engine, error) {
 	var err error
 	e := &Engine{}
 	e.id = cfg.Id
-	e.callbacks = callbacks
+	e.callbacks = cb
 	e.ctx = context.Background()
 	e.mcps = make(map[string]types.IMcpServer)
 	e.tools = make(map[string][]*schema.ToolInfo)
 	e.models = make(map[string]model.ToolCallingChatModel)
 	e.nodes = make(map[string]types.NodeInterface)
-	e.g = compose.NewGraph[map[string]any, *schema.Message]()
+	e.g = compose.NewGraph[any, any]()
+
+	//handler := callbacks.NewHandlerBuilder().OnStartFn(
+	//	func(ctx context.Context,
+	//		info *callbacks.RunInfo,
+	//		input callbacks.CallbackInput) context.Context {
+	//		logrus.Debugf("%+v", *info)
+	//		return ctx
+	//	}).Build()
+	//e.ctx = callbacks.InitCallbacks(context.Background(), nil, handler)
 
 	err = e.CreateNodes(&cfg.Nodes)
 	if err != nil {
@@ -131,11 +140,11 @@ func (e *Engine) Id() uint {
 	return e.id
 }
 
-func (e *Engine) Invoke(in map[string]any) (*schema.Message, error) {
+func (e *Engine) Invoke(in map[string]any) (any, error) {
 	return e.r.Invoke(e.ctx, in)
 }
 
-func (e *Engine) Stream(in map[string]any) (*schema.StreamReader[*schema.Message], error) {
+func (e *Engine) Stream(in map[string]any) (*schema.StreamReader[any], error) {
 	return e.r.Stream(e.ctx, in)
 }
 

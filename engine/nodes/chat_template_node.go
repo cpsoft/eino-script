@@ -30,7 +30,7 @@ func CreateChatTemplateNode(cfg *types.NodeCfg) (prompt.ChatTemplate, error) {
 		messagesTemplate = append(messagesTemplate, schema.MessagesPlaceholder("chat_history", true))
 	}
 
-	messagesTemplate = append(messagesTemplate, schema.UserMessage("问题：{message}?"))
+	messagesTemplate = append(messagesTemplate, schema.UserMessage("问题：{outmessage}?"))
 
 	pt := prompt.FromMessages(
 		schema.FString,

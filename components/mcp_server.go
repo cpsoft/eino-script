@@ -104,7 +104,7 @@ func (m *McpServer) CallTool(ctx context.Context, toolName string, argJson strin
 	}
 
 	logrus.Debugf("CallTool result: %v", result.Content)
-	marshaledResult, err := json.Marshal(result)
+	marshaledResult, err := json.Marshal(result.Content)
 	if err != nil {
 		return "", err
 	}
@@ -124,38 +124,6 @@ func (m *McpServer) ListResources(ctx context.Context) (interface{}, error) {
 	}
 	return resources, nil
 }
-
-//func CreateMcpSSEServer(cfg *types.McpServerCfg) (types.IMcpServer, error) {
-//	logrus.Debugf("CreateMcpSSEServer")
-//	if cfg.Name == "" {
-//		return nil, fmt.Errorf("Mcp server name is required")
-//	}
-//
-//	url, ok := cfg.Attrs["server_url"].(string)
-//	if !ok {
-//		return nil, errors.New("server_url not found in attributes")
-//	}
-//
-//	transportClient, err := transport.NewSSEClientTransport(url)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	client.WithLogger(pkg.DefaultLogger)
-//
-//	mcpClient, err := client.NewClient(transportClient, client.WithClientInfo(
-//		protocol.Implementation{
-//			Name:    "mcp client",
-//			Version: protocol.Version,
-//		}))
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	caps := mcpClient.GetServerCapabilities()
-//	fmt.Println(caps)
-//	return &McpServer{mcpClient, caps}, nil
-//}
 
 func CreateMcpSSEServer(info *types2.McpInfo) (types2.IMcpServer, error) {
 	logrus.Debugf("CreateMcpSSEServer")

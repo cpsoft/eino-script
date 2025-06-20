@@ -52,5 +52,5 @@ type FlowInfo struct {
 
 type Callbacks interface {
 	Callback_GetModelInfo(modelId uint) (*ModelInfo, error)
-	Callback_CreateMcpServer(mcpId uint) (*IMcpServer, error)
+	Callback_CreateMcpServer(mcpId uint) (IMcpServer, error)
 }

@@ -10,6 +10,7 @@ const (
 	NodeTypeChatModel    NodeType = "chatmodel"
 	NodeTypeChatTemplate NodeType = "chatTemplate"
 	NodeTypeMcpTemplate  NodeType = "chatMcpTemplate"
+	NodeTypeMcpTool      NodeType = "mcpTool"
 	NodeTypeEvent        NodeType = "event"
 )
 

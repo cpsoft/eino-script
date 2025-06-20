@@ -34,13 +34,11 @@ func shell(e *engine.Engine) {
 			in["chat_history"] = chat_history
 		}
 
-		msg, err := e.Invoke(in)
+		_, err = e.Invoke(in)
 		if err != nil {
 			logrus.Error(err)
 			return
 		}
-
-		fmt.Print(msg.Content)
 
 		//err = e.Stream(in)
 		//if err != nil {

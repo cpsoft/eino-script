@@ -2,14 +2,20 @@ package nodes
 
 import (
 	"context"
-	types2 "eino-script/engine/types"
+	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
+	"github.com/cloudwego/eino/schema"
 	"github.com/sirupsen/logrus"
 )
 
-func CreateOpenaiChatModelNode(info *types2.ModelInfo, cfg *types2.NodeCfg) (model.ToolCallingChatModel, error) {
+func CreateOpenaiChatModelNode(
+	info *types.ModelInfo,
+	cfg *types.NodeCfg,
+	tools []*schema.ToolInfo,
+) (model.ToolCallingChatModel, error) {
+	var err error
 	logrus.Infof("CreateOpenaiChatModelNode: %+v", *cfg)
 
 	data, ok := cfg.Attrs["data"].(map[string]interface{})
@@ -22,7 +28,8 @@ func CreateOpenaiChatModelNode(info *types2.ModelInfo, cfg *types2.NodeCfg) (mod
 		Temperature = 0.7
 	}
 
-	model, err := openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
+	var chatModel model.ToolCallingChatModel
+	chatModel, err = openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
 		BaseURL:     info.ApiUrl,
 		Model:       info.ModelName,
 		APIKey:      info.ApiKey,
@@ -32,5 +39,12 @@ func CreateOpenaiChatModelNode(info *types2.ModelInfo, cfg *types2.NodeCfg) (mod
 		return nil, err
 	}
 
-	return model, nil
+	if tools != nil {
+		chatModel, err = chatModel.WithTools(tools)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return chatModel, nil
 }

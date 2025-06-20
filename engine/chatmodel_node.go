@@ -1,10 +1,12 @@
 package engine
 
 import (
+	"context"
 	"eino-script/engine/nodes"
 	types2 "eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/components/model"
+	"github.com/cloudwego/eino/schema"
 	"github.com/sirupsen/logrus"
 )
 
@@ -63,11 +65,29 @@ func (e *Engine) CreateChatModelNode(cfg *types2.NodeCfg) (types2.NodeInterface,
 	}
 
 	var chatModel model.ToolCallingChatModel
+	var tools []*schema.ToolInfo = nil
+	McpId, ok := data["mcpid"].(float64)
+	if ok {
+		logrus.Debugf("获取到MCP ID: %f", McpId)
+		if e.callbacks != nil {
+			mcpServer, err := e.callbacks.Callback_CreateMcpServer(uint(McpId))
+			if err != nil {
+				return nil, fmt.Errorf("大模型创建MCP服务失败")
+			}
+			tools, err = mcpServer.ListTools(context.Background(), nil)
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		logrus.Debug("未获取到Mcp ID.")
+	}
+
 	switch info.ModelType {
 	case "ollama":
-		chatModel, err = nodes.CreateOllamaChatModelNode(info, cfg)
+		chatModel, err = nodes.CreateOllamaChatModelNode(info, cfg, tools)
 	case "openai":
-		chatModel, err = nodes.CreateOpenaiChatModelNode(info, cfg)
+		chatModel, err = nodes.CreateOpenaiChatModelNode(info, cfg, tools)
 	default:
 		return nil, fmt.Errorf("模型类型不正确:(" + info.ModelType + ")")
 	}
