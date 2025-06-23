@@ -1,6 +1,8 @@
 package server
 
 import (
+	"eino-script/engine"
+	"eino-script/engine/types"
 	"eino-script/server/provider"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -12,13 +14,15 @@ import (
 
 type Server struct {
 	provider    *provider.DataProvider
-	engineCache *LRUCache
+	engineCache *LRUCache[uint, *engine.Engine]
+	mcpCache    *LRUCache[uint, types.IMcpServer]
 }
 
 func CreateServer() (*Server, error) {
 	var err error
 	s := &Server{
-		engineCache: NewLRUCache(10),
+		engineCache: NewLRUCache[uint, *engine.Engine](10),
+		mcpCache:    NewLRUCache[uint, types.IMcpServer](50),
 	}
 
 	s.provider, err = provider.NewDataProvider()

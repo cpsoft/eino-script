@@ -14,6 +14,12 @@ type NodeInterface interface {
 	GetTargetId() (string, error)
 }
 
+type BranchInterface interface {
+	Id() string
+	SetStartNode(id string)
+	AddTargetNode(handle string, id string) error
+}
+
 type ModelInfo struct {
 	ID               uint   `json:"id"`        // 模型ID
 	Name             string `json:"name"`      // 模型名称

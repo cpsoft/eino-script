@@ -11,7 +11,16 @@ const (
 	NodeTypeChatTemplate NodeType = "chatTemplate"
 	NodeTypeMcpTemplate  NodeType = "chatMcpTemplate"
 	NodeTypeMcpTool      NodeType = "mcpTool"
+	NodeTypeBranch       NodeType = "branch"
 	NodeTypeEvent        NodeType = "event"
+)
+
+type ConditionType string
+
+const (
+	ConditionTypeCustom    ConditionType = "custom"
+	ConditionTypeNeedTools ConditionType = "needTools"
+	ConditionTypeDefault   ConditionType = "default"
 )
 
 type Point struct {
@@ -30,7 +39,8 @@ type NodeCfg struct {
 type EdgeCfg struct {
 	SourceNodeId string `mapstructure:"source"`
 	TargetNodeId string `mapstructure:"target"`
-	SourcePortId string `mapstructure:"sourcePortID"`
+	SourceHandle string `mapstructure:"sourceHandle"`
+	TargetHandle string `mapstructure:"targetHandle"`
 }
 
 type McpServerCfg struct {

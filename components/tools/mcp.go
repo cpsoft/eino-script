@@ -5,6 +5,7 @@ import (
 	"eino-script/engine/types"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/schema"
 	"github.com/sirupsen/logrus"
@@ -51,6 +52,14 @@ func (t *mcpToolHelper) InvokableRun(ctx context.Context, argumentsInJSON string
 func (t *mcpToolHelper) StreamableRun(ctx context.Context,
 	argumentsInJSON string, opts ...tool.Option) (*schema.StreamReader[string], error) {
 	logrus.Debugf("Tools (%s) Streamable Run: %s", t.info.Name, argumentsInJSON)
+	var cbInput *tool.CallbackInput
+
+	cbInput = &tool.CallbackInput{
+		ArgumentsInJSON: argumentsInJSON,
+		Extra:           nil,
+	}
+
+	callbacks.OnStart(ctx, cbInput)
 	sr, sw := schema.Pipe[string](1)
 	go func() {
 		defer sw.Close()
@@ -70,6 +79,8 @@ func (t *mcpToolHelper) StreamableRun(ctx context.Context,
 		logrus.Debugf("Result: %s", result)
 		sw.Send(result, nil)
 	}()
+
+	_, sr = callbacks.OnEndWithStreamOutput(ctx, sr)
 
 	return sr, nil
 }

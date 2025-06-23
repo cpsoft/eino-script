@@ -78,6 +78,7 @@ type Engine struct {
 	models    map[string]model.ToolCallingChatModel
 	tools     map[string][]*schema.ToolInfo
 	nodes     map[string]types.NodeInterface
+	branchs   map[string]types.BranchInterface
 }
 
 func CreateEngineByFile(callbacks types.Callbacks, filename string) (*Engine, error) {
@@ -106,17 +107,28 @@ func CreateEngine(cb types.Callbacks, cfg *types.Config) (*Engine, error) {
 	e.tools = make(map[string][]*schema.ToolInfo)
 	e.models = make(map[string]model.ToolCallingChatModel)
 	e.nodes = make(map[string]types.NodeInterface)
+	e.branchs = make(map[string]types.BranchInterface)
 	e.g = compose.NewGraph[any, any]()
 
-	//handler := callbacks.NewHandlerBuilder().OnStartFn(
-	//	func(ctx context.Context,
-	//		info *callbacks.RunInfo,
-	//		input callbacks.CallbackInput) context.Context {
-	//		logrus.Debugf("%+v", *info)
-	//		return ctx
-	//	}).Build()
-	//e.ctx = callbacks.InitCallbacks(context.Background(), nil, handler)
+	handler := callbacks.NewHandlerBuilder().OnStartFn(
+		func(ctx context.Context,
+			info *callbacks.RunInfo,
+			input callbacks.CallbackInput) context.Context {
+			if info != nil {
+				logrus.Debugf("runinfo start: %+v", info.Name)
+			}
+			logrus.Debugf("callback on start： %+v", input)
+			return ctx
+		}).OnEndFn(
+		func(ctx context.Context,
+			info *callbacks.RunInfo,
+			input callbacks.CallbackOutput) context.Context {
+			logrus.Debugf("callback on end： %+v", input)
+			return ctx
+		}).Build()
+	e.ctx = callbacks.InitCallbacks(context.Background(), nil, handler)
 
+	// 前端传送的Nodes与eino定义的nodes不同，其中branch也被前端定义为nodes
 	err = e.CreateNodes(&cfg.Nodes)
 	if err != nil {
 		return nil, err
@@ -128,6 +140,14 @@ func CreateEngine(cb types.Callbacks, cfg *types.Config) (*Engine, error) {
 			return nil, err
 		}
 	}
+
+	if len(e.branchs) > 0 {
+		err := e.BranchsInit()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	e.r, err = e.g.Compile(e.ctx, compose.WithMaxRunSteps(10))
 	if err != nil {
 		return nil, err

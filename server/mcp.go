@@ -240,15 +240,23 @@ func (s *Server) getMcpByID(id uint) (*types.McpInfo, error) {
 }
 
 func (s *Server) Callback_CreateMcpServer(mcpId uint) (types.IMcpServer, error) {
+
+	mcp, ok := s.mcpCache.Get(mcpId)
+	if ok {
+		return mcp, nil
+	}
+
 	info, err := s.getMcpByID(mcpId)
 	if err != nil {
 		return nil, err
 	}
 
-	mcp, err := components.CreateMcpSSEServer(info)
+	mcp, err = components.CreateMcpSSEServer(info)
 	if err != nil {
 		return nil, err
 	}
+
+	s.mcpCache.AddOrUpdate(mcpId, mcp)
 
 	return mcp, nil
 }

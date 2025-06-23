@@ -190,13 +190,13 @@ func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
 		var text string
 		switch msg := message.(type) {
 		case string:
-			logrus.Debug("输出：" + msg)
+			//logrus.Debug("输出：" + msg)
 			text = encodeToBase64(msg)
 		case *schema.Message:
 			//logrus.Debug("输出：" + msg.Content)
 			text = encodeToBase64(msg.Content)
 		case map[string]interface{}:
-			logrus.Debugf("map[string]interface: %v", msg)
+			//logrus.Debugf("map[string]interface: %v", msg)
 			obj, _ := json.Marshal(msg)
 			text = encodeToBase64(fmt.Sprintf("%+v", string(obj)))
 			//c <- MessageOrError{Err: fmt.Errorf("未知输出类型")}
@@ -240,7 +240,7 @@ func (s *Server) handlePlayFlow(c *gin.Context) {
 		})
 		return
 	}
-	s.engineCache.AddOrUpdate(e)
+	s.engineCache.AddOrUpdate(e.Id(), e)
 
 	Success(c, gin.H{
 		"id": id,
@@ -265,7 +265,7 @@ func (s *Server) handleMessage(c *gin.Context) {
 		return
 	}
 
-	logrus.Debug("Message:", string(data))
+	//logrus.Debug("Message:", string(data))
 
 	// 解析 JSON 数据到结构体
 	var body MessageRequestBody

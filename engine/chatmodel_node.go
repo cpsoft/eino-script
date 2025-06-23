@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 	"eino-script/engine/nodes"
-	types2 "eino-script/engine/types"
+	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
@@ -11,14 +11,14 @@ import (
 )
 
 type ChatModelNode struct {
-	types2.Node
+	types.Node
 }
 
 func (e ChatModelNode) Id() string {
 	return e.NodeId
 }
 
-func (e ChatModelNode) Type() (types2.NodeType, error) {
+func (e ChatModelNode) Type() (types.NodeType, error) {
 	return e.NodeType, nil
 }
 
@@ -30,7 +30,7 @@ func (cm *ChatModelNode) GetSourceId() (string, error) {
 	return cm.NodeId, nil
 }
 
-func (e *Engine) CreateChatModelNode(cfg *types2.NodeCfg) (types2.NodeInterface, error) {
+func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err
