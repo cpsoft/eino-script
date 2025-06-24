@@ -18,9 +18,8 @@ import (
 
 // 定义与 JSON 对应的结构体
 type SaveFlowRequestBody struct {
-	ID    uint                   `mapstructure:"id"` // 对应 JSON 中的 "id" 字段
-	Name  string                 `mapstructure:"name"`
-	Attrs map[string]interface{} `mapstructure:",remain"`
+	ID   uint   `mapstructure:"id"` // 对应 JSON 中的 "id" 字段
+	Name string `mapstructure:"name"`
 }
 
 // saveFlow 函数：保存 JSON 数据到 SQLite
@@ -41,16 +40,10 @@ func (s *Server) saveFlow(jsonData []byte) (uint, error) {
 		return 0, fmt.Errorf("工作流名字（%s）不能为空。", req.Name)
 	}
 
-	logrus.Debug("保存数据", req.Attrs)
-	script, err := json.Marshal(req.Attrs)
-	if err != nil {
-		return 0, fmt.Errorf("工作流数据错误.")
-	}
-
 	flow := types.FlowInfo{
 		ID:     req.ID,
 		Name:   req.Name,
-		Script: string(script),
+		Script: string(jsonData),
 	}
 
 	// 插入或更新数据到数据库
