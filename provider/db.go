@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"github.com/cloudwego/eino/schema"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
@@ -39,6 +40,15 @@ type Mcp struct {
 	Resources string
 }
 
+type SessionMessage struct {
+	gorm.Model
+	SessionId string
+	Name      string
+	FlowId    uint
+	Role      schema.RoleType
+	Content   string
+}
+
 func NewDataProvider() (*DataProvider, error) {
 	var err error
 	provider := &DataProvider{}
@@ -60,6 +70,11 @@ func NewDataProvider() (*DataProvider, error) {
 	err = provider.db.AutoMigrate(&Mcp{})
 	if err != nil {
 		return nil, fmt.Errorf("创建MCP表失败：", err.Error())
+	}
+
+	err = provider.db.AutoMigrate(&SessionMessage{})
+	if err != nil {
+		return nil, fmt.Errorf("创建对话Session表失败", err.Error())
 	}
 
 	return provider, nil

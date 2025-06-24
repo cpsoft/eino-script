@@ -157,10 +157,11 @@ func encodeToBase64(content string) string {
 }
 
 // 模拟大模型输出流
-func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
+func generateMessages(c chan MessageOrError, e *engine.Engine, session *engine.Session, msg string) {
 	defer close(c)
 	in := map[string]interface{}{
-		"outmessage": msg,
+		"outmessage":   msg,
+		"chat_history": session.GetMessages(),
 	}
 	stream, err := e.Stream(in)
 	if err != nil {
@@ -169,9 +170,15 @@ func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
 	}
 	defer stream.Close()
 
+	session.AddMessage(schema.User, msg)
+	role := schema.Assistant
+	content := ""
 	for {
 		message, err := stream.Recv()
 		if err == io.EOF {
+			if len(content) > 0 {
+				session.AddMessage(role, content)
+			}
 			return
 		}
 		if err != nil {
@@ -184,14 +191,18 @@ func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
 		switch msg := message.(type) {
 		case string:
 			//logrus.Debug("输出：" + msg)
-			text = encodeToBase64(msg)
+			text = msg
 		case *schema.Message:
 			//logrus.Debug("输出：" + msg.Content)
-			text = encodeToBase64(msg.Content)
+			if msg.Role != "" && role != msg.Role {
+				logrus.Debugf("Role发生变化(%s)->(%s)", role, msg.Role)
+				logrus.Debug(msg.Content)
+			}
+			text = msg.Content
 		case map[string]interface{}:
 			//logrus.Debugf("map[string]interface: %v", msg)
 			obj, _ := json.Marshal(msg)
-			text = encodeToBase64(fmt.Sprintf("%+v", string(obj)))
+			text = fmt.Sprintf("%+v", string(obj))
 			//c <- MessageOrError{Err: fmt.Errorf("未知输出类型")}
 		default:
 			v := reflect.TypeOf(message)
@@ -199,8 +210,10 @@ func generateMessages(c chan MessageOrError, e *engine.Engine, msg string) {
 			c <- MessageOrError{Err: fmt.Errorf("未知输出类型")}
 			return
 		}
+		content += text
+		code := encodeToBase64(text)
 		response := MessageOrError{
-			Message: text,
+			Message: code,
 		}
 		c <- response
 	}
@@ -242,8 +255,9 @@ func (s *Server) handlePlayFlow(c *gin.Context) {
 
 // 定义与 JSON 对应的结构体
 type MessageRequestBody struct {
-	ID      uint   `json:"id"`      // 对应 JSON 中的 "id" 字段
-	Message string `json:"message"` // 对应 JSON 中的 "message" 字段
+	ID        uint   `json:"id"` // 对应 JSON 中的 "id" 字段
+	SessionId string `json:"sessionId"`
+	Message   string `json:"message"` // 对应 JSON 中的 "message" 字段
 }
 
 type MessageResponse struct {
@@ -258,7 +272,7 @@ func (s *Server) handleMessage(c *gin.Context) {
 		return
 	}
 
-	//logrus.Debug("Message:", string(data))
+	logrus.Debug("Message:", string(data))
 
 	// 解析 JSON 数据到结构体
 	var body MessageRequestBody
@@ -270,7 +284,8 @@ func (s *Server) handleMessage(c *gin.Context) {
 	}
 
 	// 打印解析结果（或进行其他逻辑处理）
-	logrus.Infof("Parsed Body: ID=%s, Message=%s\n", body.ID, body.Message)
+	logrus.Infof("Parsed Body: ID=%d, SessionId=%s, Message=%s\n",
+		body.ID, body.SessionId, body.Message)
 
 	e, ok := s.engineCache.Get(body.ID)
 	if !ok {
@@ -279,6 +294,13 @@ func (s *Server) handleMessage(c *gin.Context) {
 			"Error": "工作流不存在",
 		})
 		return
+	}
+
+	session, ok := s.sessionCache.Get(body.SessionId)
+	if !ok {
+		logrus.Error("打开会话失败")
+		session = engine.NewSession()
+		s.sessionCache.AddOrUpdate(body.SessionId, session)
 	}
 
 	// 设置 SSE 所需的响应头
@@ -298,7 +320,7 @@ func (s *Server) handleMessage(c *gin.Context) {
 	}
 
 	messages := make(chan MessageOrError)
-	go generateMessages(messages, e, body.Message)
+	go generateMessages(messages, e, session, body.Message)
 
 	for msg := range messages {
 		// 在发生错误时，通过 SSE 格式发送错误消息
@@ -318,7 +340,7 @@ func (s *Server) handleMessage(c *gin.Context) {
 			c.Writer.CloseNotify()
 			return
 		}
-		fmt.Println(string(jsonData))
+		//fmt.Println(string(jsonData))
 		_, _ = fmt.Fprintf(c.Writer, "data: %s\n\n", jsonData)
 		flusher.Flush()
 	}
