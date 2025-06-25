@@ -1,5 +1,7 @@
 package types
 
+import "github.com/cloudwego/eino/schema"
+
 type Node struct {
 	NodeId   string
 	NodeType NodeType
@@ -18,6 +20,12 @@ type BranchInterface interface {
 	Id() string
 	SetStartNode(id string)
 	AddTargetNode(handle string, id string) error
+}
+
+type SessionInterface interface {
+	Id() uint
+	GetMessages() []*schema.Message
+	Close()
 }
 
 type ModelInfo struct {

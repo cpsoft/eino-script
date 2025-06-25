@@ -157,7 +157,7 @@ func encodeToBase64(content string) string {
 }
 
 // 模拟大模型输出流
-func generateMessages(c chan MessageOrError, e *engine.Engine, session *engine.Session, msg string) {
+func (s *Server) generateMessages(c chan MessageOrError, e *engine.Engine, session *engine.Session, msg string) {
 	defer close(c)
 	in := map[string]interface{}{
 		"outmessage":   msg,
@@ -170,14 +170,22 @@ func generateMessages(c chan MessageOrError, e *engine.Engine, session *engine.S
 	}
 	defer stream.Close()
 
-	session.AddMessage(schema.User, msg)
+	session, err = s.provider.AddMessage(session, schema.User, msg)
+	if err != nil {
+		c <- MessageOrError{Err: err}
+		return
+	}
 	role := schema.Assistant
 	content := ""
 	for {
 		message, err := stream.Recv()
 		if err == io.EOF {
 			if len(content) > 0 {
-				session.AddMessage(role, content)
+				session, err = s.provider.AddMessage(session, role, content)
+				if err != nil {
+					c <- MessageOrError{Err: err}
+					return
+				}
 			}
 			return
 		}
@@ -299,7 +307,7 @@ func (s *Server) handleMessage(c *gin.Context) {
 	session, ok := s.sessionCache.Get(body.SessionId)
 	if !ok {
 		logrus.Error("打开会话失败")
-		session = engine.NewSession()
+		session, _ = s.provider.NewSession(body.ID, "未命名会话")
 		s.sessionCache.AddOrUpdate(body.SessionId, session)
 	}
 
@@ -320,7 +328,7 @@ func (s *Server) handleMessage(c *gin.Context) {
 	}
 
 	messages := make(chan MessageOrError)
-	go generateMessages(messages, e, session, body.Message)
+	go s.generateMessages(messages, e, session, body.Message)
 
 	for msg := range messages {
 		// 在发生错误时，通过 SSE 格式发送错误消息

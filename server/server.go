@@ -85,6 +85,11 @@ func StartServer() {
 	router.POST("api/mcp/delete", s.handleDeleteMcp)
 	router.POST("api/mcp/getCaps", s.handleMcpCaps)
 
+	router.POST("/api/session/list", s.handleGetSessionList)
+	router.POST("/api/session/messages", s.handleGetSessionMessages)
+	router.POST("/api/session/update", s.handleUpdateSession)
+	router.POST("api/session/delete", s.handleDeleteSession)
+
 	err = router.Run()
 	if err != nil {
 		return

@@ -40,11 +40,16 @@ type Mcp struct {
 	Resources string
 }
 
+type Session struct {
+	gorm.Model
+	SessionId string
+	FlowId    uint
+	Name      string
+}
+
 type SessionMessage struct {
 	gorm.Model
 	SessionId string
-	Name      string
-	FlowId    uint
 	Role      schema.RoleType
 	Content   string
 }
@@ -72,9 +77,14 @@ func NewDataProvider() (*DataProvider, error) {
 		return nil, fmt.Errorf("创建MCP表失败：", err.Error())
 	}
 
-	err = provider.db.AutoMigrate(&SessionMessage{})
+	err = provider.db.AutoMigrate(&Session{})
 	if err != nil {
 		return nil, fmt.Errorf("创建对话Session表失败", err.Error())
+	}
+
+	err = provider.db.AutoMigrate(&SessionMessage{})
+	if err != nil {
+		return nil, fmt.Errorf("创建对话SessionMessage表失败", err.Error())
 	}
 
 	return provider, nil
