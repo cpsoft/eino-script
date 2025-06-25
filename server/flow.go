@@ -208,10 +208,10 @@ func (s *Server) generateMessages(c chan MessageOrError, e *engine.Engine, sessi
 			}
 			text = msg.Content
 		case map[string]interface{}:
-			//logrus.Debugf("map[string]interface: %v", msg)
 			obj, _ := json.Marshal(msg)
 			text = fmt.Sprintf("%+v", string(obj))
-			//c <- MessageOrError{Err: fmt.Errorf("未知输出类型")}
+		case []*schema.Message:
+			text = fmt.Sprintf("%+v", msg)
 		default:
 			v := reflect.TypeOf(message)
 			logrus.Debug("未知输出类型：" + v.String())

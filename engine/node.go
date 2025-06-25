@@ -39,6 +39,8 @@ func (e *Engine) CreateNodes(cfgs *[]types.NodeCfg) error {
 			}
 			e.branchs[branch.Id()] = branch
 			break
+		case types.NodeTypeLoop:
+			break
 		default:
 			err = errors.New(string("Unknown node type:" + cfg.Type))
 			break

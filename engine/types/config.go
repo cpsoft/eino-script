@@ -12,6 +12,7 @@ const (
 	NodeTypeMcpTemplate  NodeType = "chatMcpTemplate"
 	NodeTypeMcpTool      NodeType = "mcpTool"
 	NodeTypeBranch       NodeType = "branch"
+	NodeTypeLoop         NodeType = "loop"
 	NodeTypeEvent        NodeType = "event"
 )
 
