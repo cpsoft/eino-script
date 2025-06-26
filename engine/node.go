@@ -32,6 +32,9 @@ func (e *Engine) CreateNodes(cfgs *[]types.NodeCfg) error {
 		case types.NodeTypeMcpTool:
 			node, err = e.CreateMcpToolNode(&cfg)
 			break
+		case types.NodeTypeLoader:
+			node, err = e.CreateLoaderNode(&cfg)
+			break
 		case types.NodeTypeBranch:
 			branch, err := e.CreateBranch(&cfg)
 			if err != nil {

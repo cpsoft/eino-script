@@ -13,6 +13,7 @@ const (
 	NodeTypeMcpTool      NodeType = "mcpTool"
 	NodeTypeBranch       NodeType = "branch"
 	NodeTypeLoop         NodeType = "loop"
+	NodeTypeLoader       NodeType = "loader"
 	NodeTypeEvent        NodeType = "event"
 )
 

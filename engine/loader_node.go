@@ -1,0 +1,72 @@
+package engine
+
+import (
+	"eino-script/engine/nodes"
+	"eino-script/engine/types"
+	"fmt"
+	"github.com/cloudwego/eino/compose"
+)
+
+type LoaderNode struct {
+	types.Node
+}
+
+func (l LoaderNode) Id() string {
+	return l.NodeId
+}
+
+func (l LoaderNode) Type() (types.NodeType, error) {
+	return l.NodeType, nil
+}
+
+func (l *LoaderNode) GetTargetId() (string, error) {
+	return l.NodeId, nil
+}
+
+func (l *LoaderNode) GetSourceId() (string, error) {
+	return l.NodeId, nil
+}
+
+func (e *Engine) CreateLoaderNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
+	n, err := CreateGeneralNode(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	node := &McpToolNode{
+		Node: *n,
+	}
+
+	id := node.Id()
+	if id == "" {
+		return nil, err
+	}
+
+	data, ok := cfg.Attrs["data"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("data not found in attrs")
+	}
+
+	mcpId, ok := data["id"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("McpTool的mcpId没有设置。")
+	}
+
+	server, err := e.callbacks.Callback_CreateMcpServer(uint(mcpId))
+	if err != nil {
+		return nil, err
+	}
+
+	mcpTool, err := nodes.CreateMcpToolNode(cfg, server)
+	if err != nil {
+		return nil, err
+	}
+
+	//Todo: 对齐问题还需要处理
+	err = e.g.AddToolsNode(id, mcpTool, compose.WithOutputKey("outmessage"))
+	if err != nil {
+		return nil, err
+	}
+
+	return node, nil
+}
