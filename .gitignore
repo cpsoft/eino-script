@@ -11,7 +11,13 @@
 # Test binary, built with `go test -c`
 *.test
 
+*.db
+
 config.toml
+go.mod
+go.sum
+vcs.xml
+
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
