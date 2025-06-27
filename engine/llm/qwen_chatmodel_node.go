@@ -1,4 +1,4 @@
-package nodes
+package llm
 
 import (
 	"context"

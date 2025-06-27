@@ -1,22 +1,22 @@
-package nodes
+package llm
 
 import (
 	"context"
 	"eino-script/engine/types"
 	"fmt"
-	"github.com/cloudwego/eino-ext/components/model/ollama"
+	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
-	"github.com/ollama/ollama/api"
 	"github.com/sirupsen/logrus"
 )
 
-func CreateOllamaChatModelNode(
+func CreateOpenaiChatModelNode(
 	info *types.ModelInfo,
 	cfg *types.NodeCfg,
-	tools []*schema.ToolInfo) (model.ToolCallingChatModel, error) {
+	tools []*schema.ToolInfo,
+) (model.ToolCallingChatModel, error) {
 	var err error
-	logrus.Infof("CreateOllamaChatModelNode: %+v", *cfg)
+	logrus.Infof("CreateOpenaiChatModelNode: %+v", *cfg)
 
 	data, ok := cfg.Attrs["data"].(map[string]interface{})
 	if !ok {
@@ -28,24 +28,23 @@ func CreateOllamaChatModelNode(
 		Temperature = 0.7
 	}
 
-	var model model.ToolCallingChatModel
-	model, err = ollama.NewChatModel(context.Background(), &ollama.ChatModelConfig{
-		BaseURL: info.ApiUrl,
-		Model:   info.ModelName,
-		Options: &api.Options{
-			Temperature: Temperature,
-		},
+	var chatModel model.ToolCallingChatModel
+	chatModel, err = openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
+		BaseURL:     info.ApiUrl,
+		Model:       info.ModelName,
+		APIKey:      info.ApiKey,
+		Temperature: &Temperature,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	if tools != nil {
-		model, err = model.WithTools(tools)
+		chatModel, err = chatModel.WithTools(tools)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return model, nil
+	return chatModel, nil
 }

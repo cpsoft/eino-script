@@ -2,7 +2,7 @@ package engine
 
 import (
 	"context"
-	"eino-script/engine/nodes"
+	"eino-script/engine/llm"
 	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/components/model"
@@ -85,9 +85,9 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 
 	switch info.ModelType {
 	case "ollama":
-		chatModel, err = nodes.CreateOllamaChatModelNode(info, cfg, tools)
+		chatModel, err = llm.CreateOllamaChatModelNode(info, cfg, tools)
 	case "openai":
-		chatModel, err = nodes.CreateOpenaiChatModelNode(info, cfg, tools)
+		chatModel, err = llm.CreateOpenaiChatModelNode(info, cfg, tools)
 	default:
 		return nil, fmt.Errorf("模型类型不正确:(" + info.ModelType + ")")
 	}

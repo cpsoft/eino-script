@@ -1,4 +1,4 @@
-package nodes
+package templates
 
 import (
 	"eino-script/engine/types"

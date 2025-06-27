@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"eino-script/engine/nodes"
+	"eino-script/engine/templates"
 	"eino-script/engine/types"
 )
 
@@ -40,7 +40,7 @@ func (e *Engine) CreateMcpTemplateNode(cfg *types.NodeCfg) (types.NodeInterface,
 		return nil, err
 	}
 
-	template, err := nodes.CreateMcpTemplateNode(cfg)
+	template, err := templates.CreateMcpTemplateNode(cfg)
 	if err != nil {
 		return nil, err
 	}

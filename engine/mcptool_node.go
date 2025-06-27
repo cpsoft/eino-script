@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"eino-script/engine/nodes"
+	"eino-script/engine/tools"
 	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/compose"
@@ -57,7 +57,7 @@ func (e *Engine) CreateMcpToolNode(cfg *types.NodeCfg) (types.NodeInterface, err
 		return nil, err
 	}
 
-	mcpTool, err := nodes.CreateMcpToolNode(cfg, server)
+	mcpTool, err := tools.CreateMcpToolNode(cfg, server)
 	if err != nil {
 		return nil, err
 	}

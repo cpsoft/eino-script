@@ -1,6 +1,9 @@
 package types
 
-import "github.com/cloudwego/eino/schema"
+import (
+	"github.com/cloudwego/eino/components/document"
+	"github.com/cloudwego/eino/schema"
+)
 
 type Node struct {
 	NodeId   string
@@ -62,6 +65,10 @@ type FlowInfo struct {
 	ID     uint   `json:"id"`
 	Name   string `json:"name"`
 	Script string `json:"script"`
+}
+
+type LoaderInterface interface {
+	GetEinoNode() (document.Loader, error)
 }
 
 type Callbacks interface {
