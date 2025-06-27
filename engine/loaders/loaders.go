@@ -1,17 +1,18 @@
 package loaders
 
 import (
-	"eino-script/engine/types"
 	"errors"
+	"github.com/cloudwego/eino/components/document"
 )
 
-type LoaderCreateFunc func(data map[string]interface{}) (types.LoaderInterface, error)
+type LoaderCreateFunc func(data map[string]interface{}) (document.Loader, error)
 
 var loaderRegistry = map[string]LoaderCreateFunc{
-	"web": CreateWebLoader,
+	"web":  CreateWebLoader,
+	"file": CreateFileLoader,
 }
 
-func CreateLoaderNode(data map[string]interface{}) (types.LoaderInterface, error) {
+func CreateLoaderNode(data map[string]interface{}) (document.Loader, error) {
 	loaderType, ok := data["type"].(string)
 	if !ok {
 		return nil, errors.New("loaderType is not a string")

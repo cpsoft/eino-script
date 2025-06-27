@@ -4,11 +4,12 @@ import (
 	"eino-script/engine/loaders"
 	"eino-script/engine/types"
 	"fmt"
+	"github.com/cloudwego/eino/components/document"
 )
 
 type LoaderNode struct {
 	types.Node
-	loader types.LoaderInterface
+	document.Loader
 }
 
 func (l LoaderNode) Id() string {
@@ -52,15 +53,10 @@ func (e *Engine) CreateLoaderNode(cfg *types.NodeCfg) (types.NodeInterface, erro
 		return nil, err
 	}
 
-	node.loader = loader
-
-	einoLoader, err := node.loader.GetEinoNode()
-	if err != nil {
-		return nil, err
-	}
+	node.Loader = loader
 
 	//Todo: 对齐问题还需要处理
-	err = e.g.AddLoaderNode(id, einoLoader)
+	err = e.g.AddLoaderNode(id, loader)
 	if err != nil {
 		return nil, err
 	}
