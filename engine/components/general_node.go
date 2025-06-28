@@ -1,4 +1,4 @@
-package engine
+package components
 
 import (
 	"eino-script/engine/types"
@@ -9,7 +9,6 @@ func CreateGeneralNode(cfg *types.NodeCfg) (*types.Node, error) {
 	node := &types.Node{
 		NodeId:   cfg.Id,
 		NodeType: cfg.Type,
-		Position: cfg.Position,
 	}
 	return node, nil
 }

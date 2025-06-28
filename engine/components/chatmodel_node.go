@@ -1,11 +1,12 @@
-package engine
+package components
 
 import (
 	"context"
-	"eino-script/engine/llm"
+	"eino-script/engine/components/llm"
 	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/components/model"
+	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/sirupsen/logrus"
 )
@@ -30,7 +31,7 @@ func (cm *ChatModelNode) GetSourceId() (string, error) {
 	return cm.NodeId, nil
 }
 
-func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
+func CreateChatModelNode(cfg *types.NodeCfg, g *compose.Graph[any, any], callbacks types.Callbacks) (types.NodeInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err
@@ -56,10 +57,10 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 		return nil, fmt.Errorf("model not found in config")
 	}
 
-	if e.callbacks == nil {
+	if callbacks == nil {
 		return nil, fmt.Errorf("engine的回调函数没有配置。")
 	}
-	info, err := e.callbacks.Callback_GetModelInfo(uint(ModelId))
+	info, err := callbacks.Callback_GetModelInfo(uint(ModelId))
 	if err != nil {
 		return nil, err
 	}
@@ -69,15 +70,13 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 	McpId, ok := data["mcpid"].(float64)
 	if ok {
 		logrus.Debugf("获取到MCP ID: %f", McpId)
-		if e.callbacks != nil {
-			mcpServer, err := e.callbacks.Callback_CreateMcpServer(uint(McpId))
-			if err != nil {
-				return nil, fmt.Errorf("大模型创建MCP服务失败")
-			}
-			tools, err = mcpServer.ListTools(context.Background(), nil)
-			if err != nil {
-				return nil, err
-			}
+		mcpServer, err := callbacks.Callback_CreateMcpServer(uint(McpId))
+		if err != nil {
+			return nil, fmt.Errorf("大模型创建MCP服务失败")
+		}
+		tools, err = mcpServer.ListTools(context.Background(), nil)
+		if err != nil {
+			return nil, err
 		}
 	} else {
 		logrus.Debug("未获取到Mcp ID.")
@@ -96,7 +95,7 @@ func (e *Engine) CreateChatModelNode(cfg *types.NodeCfg) (types.NodeInterface, e
 		return nil, err
 	}
 
-	err = e.g.AddChatModelNode(id, chatModel)
+	err = g.AddChatModelNode(id, chatModel)
 	if err != nil {
 		return nil, err
 	}

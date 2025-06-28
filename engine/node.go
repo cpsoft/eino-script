@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"eino-script/engine/components"
 	"eino-script/engine/types"
 	"errors"
 	"fmt"
@@ -15,28 +16,28 @@ func (e *Engine) CreateNodes(cfgs *[]types.NodeCfg) error {
 		node = nil
 		switch cfg.Type {
 		case types.NodeTypeStart:
-			node, err = CreateStartNode(&cfg)
+			node, err = components.CreateStartNode(&cfg)
 			break
 		case types.NodeTypeEnd:
-			node, err = CreateEndNode(&cfg)
+			node, err = components.CreateEndNode(&cfg)
 			break
 		case types.NodeTypeChatModel:
-			node, err = e.CreateChatModelNode(&cfg)
+			node, err = components.CreateChatModelNode(&cfg, e.g, e.callbacks)
 			break
 		case types.NodeTypeChatTemplate:
-			node, err = e.CreateChatTemplateNode(&cfg)
+			node, err = components.CreateChatTemplateNode(&cfg, e.g)
 			break
 		case types.NodeTypeMcpTemplate:
-			node, err = e.CreateMcpTemplateNode(&cfg)
+			node, err = components.CreateMcpTemplateNode(&cfg, e.g)
 			break
 		case types.NodeTypeMcpTool:
-			node, err = e.CreateMcpToolNode(&cfg)
+			node, err = components.CreateMcpToolNode(&cfg, e.g, e.callbacks)
 			break
 		case types.NodeTypeLoader:
-			node, err = e.CreateLoaderNode(&cfg)
+			node, err = components.CreateLoaderNode(&cfg, e.g)
 			break
 		case types.NodeTypeBranch:
-			branch, err := e.CreateBranch(&cfg)
+			branch, err := components.CreateBranch(&cfg)
 			if err != nil {
 				return fmt.Errorf("创建Branch失败(%s)：%s", cfg.Id, err.Error())
 			}

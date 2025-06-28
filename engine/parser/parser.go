@@ -1,7 +1,8 @@
-package engine
+package parser
 
 import (
 	"bytes"
+	"eino-script/engine/entity"
 	engine "eino-script/engine/types"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -26,7 +27,8 @@ func Parser(data []byte, format string) (*engine.Config, error) {
 	return &cfg, nil
 }
 
-func ParserFile(filename string) (*engine.Config, error) {
+func ParserFile(filename string, format string) (*entity.Flow, error) {
+	var flow *entity.Flow
 	file, err := os.Open(filename)
 	if err != nil {
 		logrus.Error("open file error:", err)
@@ -39,5 +41,17 @@ func ParserFile(filename string) (*engine.Config, error) {
 		logrus.Errorf("read file error, %s", err)
 		return nil, fmt.Errorf("read file error, %s", err)
 	}
-	return Parser(data, "toml")
+	switch format {
+	case "flowgram":
+		flow, err = ParseFlowgram(data)
+		if err != nil {
+			logrus.Error("parse flowgram error:", err)
+			return nil, fmt.Errorf("parse flowgram error, %s", err)
+		}
+		break
+	default:
+		logrus.Error("unknown format:", format)
+		return nil, fmt.Errorf("unknown format: %s", format)
+	}
+	return flow, nil
 }

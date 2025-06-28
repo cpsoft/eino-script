@@ -1,10 +1,11 @@
-package engine
+package components
 
 import (
-	"eino-script/engine/loaders"
+	"eino-script/engine/components/loaders"
 	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/components/document"
+	"github.com/cloudwego/eino/compose"
 )
 
 type LoaderNode struct {
@@ -28,7 +29,7 @@ func (l *LoaderNode) GetSourceId() (string, error) {
 	return l.NodeId, nil
 }
 
-func (e *Engine) CreateLoaderNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
+func CreateLoaderNode(cfg *types.NodeCfg, g *compose.Graph[any, any]) (types.NodeInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err
@@ -55,8 +56,7 @@ func (e *Engine) CreateLoaderNode(cfg *types.NodeCfg) (types.NodeInterface, erro
 
 	node.Loader = loader
 
-	//Todo: 对齐问题还需要处理
-	err = e.g.AddLoaderNode(id, loader)
+	err = g.AddLoaderNode(id, loader)
 	if err != nil {
 		return nil, err
 	}

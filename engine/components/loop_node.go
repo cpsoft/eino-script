@@ -1,8 +1,9 @@
-package engine
+package components
 
 import (
 	"eino-script/engine/types"
 	"fmt"
+	"github.com/cloudwego/eino/compose"
 )
 
 type LoopNode struct {
@@ -11,7 +12,7 @@ type LoopNode struct {
 	conditions map[string]BranchCondition
 }
 
-func (e *Engine) CreateLoop(cfg *types.NodeCfg) (types.BranchInterface, error) {
+func CreateLoop(cfg *types.NodeCfg, g *compose.Graph[any, any]) (types.BranchInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err

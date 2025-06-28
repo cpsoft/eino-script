@@ -1,4 +1,4 @@
-package engine
+package components
 
 import (
 	"context"
@@ -68,7 +68,7 @@ func (bn BranchNode) CommonBranch(ctx context.Context, input *schema.StreamReade
 	return "", nil
 }
 
-func (e *Engine) CreateBranch(cfg *types.NodeCfg) (types.BranchInterface, error) {
+func CreateBranch(cfg *types.NodeCfg) (types.BranchInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err
@@ -115,8 +115,8 @@ func (e *Engine) CreateBranch(cfg *types.NodeCfg) (types.BranchInterface, error)
 	return node, nil
 }
 
-func (e *Engine) BranchsInit() error {
-	for _, info := range e.branchs {
+func BranchsInit(g *compose.Graph[any, any], branchs *map[string]types.BranchInterface) error {
+	for _, info := range *branchs {
 		b, ok := info.(*BranchNode)
 		if !ok {
 			return fmt.Errorf("Branch节点错误。")
@@ -126,7 +126,7 @@ func (e *Engine) BranchsInit() error {
 			targets[handle.NodeId] = true
 		}
 		logrus.Debug("branch(%s):", b.Id(), b.sourceId)
-		err := e.g.AddBranch(b.sourceId, compose.NewStreamGraphBranch(b.CommonBranch, targets))
+		err := g.AddBranch(b.sourceId, compose.NewStreamGraphBranch(b.CommonBranch, targets))
 		if err != nil {
 			return err
 		}

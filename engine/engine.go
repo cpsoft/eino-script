@@ -3,6 +3,8 @@ package engine
 import (
 	"bytes"
 	"context"
+	"eino-script/engine/components"
+	"eino-script/engine/parser"
 	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino-ext/callbacks/apmplus"
@@ -81,16 +83,17 @@ type Engine struct {
 	branchs   map[string]types.BranchInterface
 }
 
-func CreateEngineByFile(callbacks types.Callbacks, filename string) (*Engine, error) {
-	cfg, err := ParserFile(filename)
+func CreateEngineByFile(callbacks types.Callbacks, filename string, format string) (*Engine, error) {
+	flow, err := parser.ParserFile(filename, format)
 	if err != nil {
 		return nil, err
 	}
-	return CreateEngine(callbacks, cfg)
+	logrus.Infof("Load config file %+v", flow)
+	return nil, nil
 }
 
 func CreateEngineByData(callbacks types.Callbacks, data []byte, format string) (*Engine, error) {
-	cfg, err := Parser(data, format)
+	cfg, err := parser.Parser(data, format)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +145,7 @@ func CreateEngine(cb types.Callbacks, cfg *types.Config) (*Engine, error) {
 	}
 
 	if len(e.branchs) > 0 {
-		err := e.BranchsInit()
+		err := components.BranchsInit(e.g, &e.branchs)
 		if err != nil {
 			return nil, err
 		}

@@ -1,7 +1,7 @@
-package engine
+package components
 
 import (
-	"eino-script/engine/tools"
+	"eino-script/engine/components/tools"
 	"eino-script/engine/types"
 	"fmt"
 	"github.com/cloudwego/eino/compose"
@@ -27,7 +27,7 @@ func (cm *McpToolNode) GetSourceId() (string, error) {
 	return cm.NodeId, nil
 }
 
-func (e *Engine) CreateMcpToolNode(cfg *types.NodeCfg) (types.NodeInterface, error) {
+func CreateMcpToolNode(cfg *types.NodeCfg, g *compose.Graph[any, any], callbacks types.Callbacks) (types.NodeInterface, error) {
 	n, err := CreateGeneralNode(cfg)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (e *Engine) CreateMcpToolNode(cfg *types.NodeCfg) (types.NodeInterface, err
 		return nil, fmt.Errorf("McpTool的mcpId没有设置。")
 	}
 
-	server, err := e.callbacks.Callback_CreateMcpServer(uint(mcpId))
+	server, err := callbacks.Callback_CreateMcpServer(uint(mcpId))
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (e *Engine) CreateMcpToolNode(cfg *types.NodeCfg) (types.NodeInterface, err
 	}
 
 	//Todo: 对齐问题还需要处理
-	err = e.g.AddToolsNode(id, mcpTool, compose.WithOutputKey("outmessage"))
+	err = g.AddToolsNode(id, mcpTool, compose.WithOutputKey("outmessage"))
 	if err != nil {
 		return nil, err
 	}

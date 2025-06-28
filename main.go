@@ -88,7 +88,7 @@ func main() {
 	if *isServer {
 		server.StartServer()
 	} else if *filePath != "" {
-		e, err := engine.CreateEngineByFile(nil, *filePath)
+		e, err := engine.CreateEngineByFile(nil, *filePath, "flowgram")
 		if err != nil {
 			logrus.Error(err)
 			return

@@ -31,11 +31,10 @@ type Point struct {
 }
 
 type NodeCfg struct {
-	Id       string                 `mapstructure:"id"`
-	Type     NodeType               `mapstructure:"type"`
-	Position Point                  `mapstructure:"position"`
-	Name     string                 `mapstructure:"name"`
-	Attrs    map[string]interface{} `mapstructure:",remain"`
+	Id    string                 `mapstructure:"id"`
+	Type  NodeType               `mapstructure:"type"`
+	Name  string                 `mapstructure:"name"`
+	Attrs map[string]interface{} `mapstructure:",remain"`
 }
 
 type EdgeCfg struct {
